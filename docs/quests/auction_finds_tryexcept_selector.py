@@ -20,7 +20,7 @@ pass
 from selenium.webdriver.common.by import By
 selector_value = 'div.info'
 element_bundle = browser.find_elements(by=By.CSS_SELECTOR, value=selector_value)
-for i in element_bundle[0:10]:
+for i in element_bundle:
     # print(i.text) # 상품 정보들
     #상품 제목
     element_title = i.find_element(by=By.CSS_SELECTOR, value='em')
