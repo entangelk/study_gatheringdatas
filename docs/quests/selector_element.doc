@@ -12,3 +12,12 @@ new_price : span.sale
 
 delivery : div.item_icons
 #itembest_T > ul:nth-child(4) > li:nth-child(4) > div > div.info > div.icon > div
+
+delivery_allkill : div.icons.ic_allkill
+#itembest_T > ul:nth-child(4) > li:nth-child(4) > div > div.info > div.icon > div > div.icons.ic_allkill
+
+delivery_smile : div.icons.ic_smiledelivery
+#itembest_T > ul:nth-child(4) > li:nth-child(4) > div > div.info > div.icon > div > div.icons.ic_smiledelivery
+
+delivery_free : div.icons.ic_free
+#itembest_T > ul:nth-child(4) > li:nth-child(4) > div > div.info > div.icon > div > div.icons.ic_free
