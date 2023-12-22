@@ -10,5 +10,5 @@ old_price : span.cost
 new_price : span.sale
 #itembest_T > ul.uxb-img.first > li:nth-child(2) > div > div.info > ul > li.d_price > span.sale
 
-delivery : div.icons.ic_free
-#itembest_T > ul.uxb-img.first > li:nth-child(2) > div > div.info > div.icon > div > div
+delivery : div.item_icons
+#itembest_T > ul:nth-child(4) > li:nth-child(4) > div > div.info > div.icon > div

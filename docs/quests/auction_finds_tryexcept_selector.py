@@ -20,7 +20,7 @@ pass
 from selenium.webdriver.common.by import By
 selector_value = 'div.info'
 element_bundle = browser.find_elements(by=By.CSS_SELECTOR, value=selector_value)
-for i in element_bundle:
+for i in element_bundle[0:10]:
     # print(i.text) # 상품 정보들
     #상품 제목
     element_title = i.find_element(by=By.CSS_SELECTOR, value='em')
@@ -41,13 +41,38 @@ for i in element_bundle:
         new_price=""
         pass
     try :
-        element_delivery = i.find_element(by=By.CSS_SELECTOR, value='div.icons.ic_free')
-        delivery = element_delivery.text
+        element_delivery = i.find_elements(by=By.CSS_SELECTOR, value='div.item_icons')
+        try : 
+            for j in element_delivery:
+                delivery_one = j.find_element(by=By.CSS_SELECTOR, value='div.icons.ic_allkill')
+                text_delivery_one = delivery_one.text
+                pass
+        except :
+                text_delivery_one = ""
+                pass
+        try : 
+            for j in element_delivery:
+                delivery_two = j.find_element(by=By.CSS_SELECTOR, value='div.icons.ic_smiledelivery')
+                text_delivery_two = delivery_two.text
+                pass
+        except :
+                text_delivery_two = ""
+                pass
+        try : 
+            for j in element_delivery:
+                delivery_three = j.find_element(by=By.CSS_SELECTOR, value='div.icons.ic_free')
+                text_delivery_three = delivery_three.text
+                pass
+        except :
+                text_delivery_three = ""
+                pass                
         pass
     except:
-        delivery=""
+        text_delivery_one = ""
+        text_delivery_two = ""
+        text_delivery_three = ""
         pass    
-    print('title : {}, old price : {}, new price : {}, delivery method : {}'.format(title,old_price,new_price,delivery))
+    print('title : {}, old price : {}, new price : {}, delivery method : {} {} {}'.format(title,old_price,new_price,text_delivery_one,text_delivery_two,text_delivery_three))
 pass
 
 # 브라우저 종료
