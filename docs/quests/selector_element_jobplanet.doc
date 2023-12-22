@@ -1,0 +1,11 @@
+loginclick : header > div.right_box > div.login_before.show > a.btn_txt.login
+body > div.body_wrap > div.globalHeaderWrap > header > div.right_box > div.login_before.show > a.btn_txt.login
+
+login_field : #user_email
+password_field : #user_password
+
+login_button : div > section.section_email.er_r > fieldset > button
+#signInSignInCon > div.signInsignIn_wrap > div > section.section_email.er_r > fieldset > button
+
+search_field : #search_form > div > label
+search_button : #search_form > div > button > i
