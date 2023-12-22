@@ -20,7 +20,7 @@ pass
 from selenium.webdriver.common.by import By
 selector_value = 'div.info'
 element_bundle = browser.find_elements(by=By.CSS_SELECTOR, value=selector_value)
-for i in element_bundle:
+for i in element_bundle[0:10]:
     # print(i.text) # 상품 정보들
     #상품 제목
     element_title = i.find_element(by=By.CSS_SELECTOR, value='em')
@@ -40,6 +40,15 @@ for i in element_bundle:
     except:
         new_price=""
         pass
+
+    try :
+        element_delivery = i.find_element(by=By.CSS_SELECTOR, value='div.item_icons')
+        delivery_method = element_delivery.text.split()
+        pass
+    except:
+        delivery_method=''
+        pass
+    '''
     try :
         element_delivery = i.find_elements(by=By.CSS_SELECTOR, value='div.item_icons')
         try : 
@@ -72,7 +81,8 @@ for i in element_bundle:
         text_delivery_two = ""
         text_delivery_three = ""
         pass    
-    print('title : {}, old price : {}, new price : {}, delivery method : {} {} {}'.format(title,old_price,new_price,text_delivery_one,text_delivery_two,text_delivery_three))
+'''
+    print('title : {}, old price : {}, new price : {}, delivery method : {}'.format(title,old_price,new_price,delivery_method))
 pass
 
 # 브라우저 종료
