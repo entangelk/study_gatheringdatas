@@ -34,7 +34,7 @@ element_body = browser.find_element(by=By.CSS_SELECTOR,value='body')
 
 previous_scrollHeight = 0
 
-while True:
+while True: # 스크롤 끝까지 내리기
     element_body.send_keys(Keys.END)
     current_scrollHeight = browser.execute_script('return document.body.scrollHeight')
     if previous_scrollHeight >= current_scrollHeight:
@@ -43,27 +43,29 @@ while True:
         previous_scrollHeight = current_scrollHeight
         pass
     time.sleep(3)
-element_count = browser.find_elements(by=By.CSS_SELECTOR,value='section > div > div > div > ul>div')
-count=0
-for i in element_count:
-    count +=1
+
+
+element_count = browser.find_elements(by=By.CSS_SELECTOR,value='section > div > div > div > ul>div') # 총 수집할 엘리멘츠 호출
+count=0 # 카운트 초기화
+for i in element_count: # 수입할 엘리멘츠 수만큼
+    count +=1   # 카운트 증가
     pass
 
-for i in range(count):
+for i in range(count): # 총 엘리멘츠 수만큼 반복
     try:
-        element_bundle = browser.find_elements(by=By.CSS_SELECTOR,value='section > div > div > div > ul> div:nth-child({})'.format(i))
+        element_bundle = browser.find_elements(by=By.CSS_SELECTOR,value='section > div > div > div > ul> div:nth-child({})'.format(i))  # 번들 번호에 맞춰서 추출
         for j in element_bundle:
-            try:
+            try:    # 이름 추출
                 element_name = j.find_element(by=By.CSS_SELECTOR,value='div.css-jqudug.egj9y8a3 > div.css-drz8qh.egj9y8a2 > a > div.css-eldyae.e10cf2lr1')
                 name = element_name.text
             except:
                 name = ""
-            try:
+            try:    # 별점 추출
                 element_star = j.find_element(by=By.CSS_SELECTOR,value='div.css-jqudug.egj9y8a3 > div.css-31ods0.egj9y8a0 > span')
                 star=element_star.text
             except:
                 star=""
-            try:
+            try:    # 코멘트 추출
                 element_comment = j.find_element(by=By.CSS_SELECTOR,value='div.css-2occzs.egj9y8a1 > a > div > span')
                 comment=element_comment.text
             except:
@@ -73,7 +75,7 @@ for i in range(count):
                     'Star': star,
                     'Comment': comment
                     }
-            insert_collection.insert_one(data)
+            insert_collection.insert_one(data)  # DB 저장
     except:
         break    
 
