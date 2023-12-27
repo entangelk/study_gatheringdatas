@@ -1,0 +1,1335 @@
+function reviewDetailPopup(htmls, targetArea, append) {
+    if (append) {
+        $('#' + targetArea).append(htmls);
+    } else {
+        $('#' + targetArea).html(htmls);
+    }
+
+    if (targetArea === 'photo-review-detail') {
+        var logTag = document.getElementById('photo-review-detail-contents');
+        logTag.setAttribute('data-log-actionid-area', 'movie_review_popup');
+        logTag.setAttribute('data-log-actionid-label', 'review_imp');
+        var logbody = "{'current_product_no':'"
+            + logTag.getAttribute('data-prdNo')
+            + "', 'send_impression':'Y'"
+            + ", 'custom_yn' : '" + logTag.getAttribute('data-existReplyYn') + "'}";
+        logTag.setAttribute('data-log-body', logbody);
+        rakeLog.sendRakeLog(logTag, 'impression');
+
+        //DO NOT DELETE. impression 날리고 어트리뷰트 삭제를 안하면 엄한 이벤트에서 같이 딸려서 쓰레기 로그를 발송함.....
+        logTag.removeAttribute('data-log-actionid-area');
+        logTag.removeAttribute('data-log-actionid-label');
+        logTag.removeAttribute('data-log-body');
+    }
+
+    if (targetArea === 'review-list-detail-div') {
+        var logTag = document.getElementById('review-detail-contents');
+        logTag.setAttribute('data-log-actionid-area', 'review_popup');
+        logTag.setAttribute('data-log-actionid-label', 'review_imp');
+        var logbody = "{'current_product_no':'"
+            + logTag.getAttribute('data-prdNo')
+            + "', 'send_impression':'Y'"
+            + ", 'custom_yn' : '" + logTag.getAttribute('data-existReplyYn') + "'}";
+        logTag.setAttribute('data-log-body', logbody);
+        rakeLog.sendRakeLog(logTag, 'impression');
+
+        //DO NOT DELETE. impression 날리고 어트리뷰트 삭제를 안하면 엄한 이벤트에서 같이 딸려서 쓰레기 로그를 발송함.....
+        logTag.removeAttribute('data-log-actionid-area');
+        logTag.removeAttribute('data-log-actionid-label');
+        logTag.removeAttribute('data-log-body');
+    }
+}
+var reviewWraps = function () {
+    this.selector_contentsMappingNo = 0;
+    this.photo_review_list_page = 1;
+    this.photo_review_gallery_count = "";
+    this.photo_review_detail_page = 1;
+    this.photo_review_detail_size = 35;
+
+    this.review_detail_page = 1;
+    this.review_list_page = 1;
+    this.review_detail_size = 20;
+
+    this.review_list_sort_type = '01';
+    this.review_list_mediaReviewType = [];
+    this.review_list_pnt_val = [];
+    this.review_list_options = "";
+    this.video_auto_play = true;
+
+    this.summary_videoElement = 0;
+    this.summary_videoPlayer = 0;
+    this.summary_video = 0;
+    this.endLogSend = 0;
+    this.playLogSend = 0;
+    this.stopLogSend = 0;
+
+    this.explorer = (navigator.appName == 'Netscape' && navigator.userAgent.toLowerCase().indexOf('trident') != -1) || (navigator.userAgent.toLowerCase().indexOf("msie") != -1);
+
+    this.getReviewDetailWrap = function (contentsMappingNo, contentsImageNo) {
+        if (!reviews.isExplorer() && !reviews.isPhoneShop()) {
+            $('#review-loading').addClass('active');
+        }
+
+        if (contentsMappingNo === '' || contentsMappingNo === null) {
+            return;
+        }
+        if (contentsImageNo === '' || contentsImageNo === null || contentsImageNo === undefined) {
+            contentsImageNo = 0;
+        }
+
+        reviews.selector_contentsMappingNo = contentsMappingNo;
+        if (reviews.isExplorer() || reviews.isPhoneShop()) {
+            reviews.getReviewDetailWrapIE(contentsMappingNo, contentsImageNo);
+        } else {
+            reviews.getReviewDetailWrapChrome(contentsMappingNo, contentsImageNo);
+        }
+
+    };
+
+    this.getReviewDetailWrapIE = function (contentsMappingNo, contentsImageNo) {
+        var url = "//www.11st.co.kr/products/" + productPrdInfo.prdNo +
+            "/reviews/" + contentsMappingNo + "/detail-ie?selector="
+            + contentsImageNo;
+        window.open(url,
+            "_popup", "width=" + 960 + "px,height=" + 647 + "px,scrollbars=no,status=no,location=no");
+    };
+
+    this.getReviewDetailWrapChrome = function (contentsMappingNo, contentsImageNo) {
+        $.ajax({
+            url: "/products/" + productPrdInfo.prdNo + "/reviews/" + contentsMappingNo + "/detail" + "?selector=" + contentsImageNo,
+            method: 'POST',
+            data: reviews.getReviewDetailData(),
+            dataType: 'text',
+            contentType: 'application/json; charset=UTF-8'
+        }).success(function (data) {
+            if (data !== '') {
+                $('#review-list-detail-div').html(data);
+            } else {
+                errorProcess();
+            }
+        }).then(function () {
+            // reviewDetailPopupEvent
+            reviews.reviewDetailPopupEvent();
+            reviews.setVideoPlay();
+
+        }).then(function () {
+            // reviewDetailPopupThumbnailEvent
+            reviews.reviewDetailPopupThumbnailEvent();
+            reviews.addReviewDetailVideoPlay();
+            reviews.parentAddKkuk();
+            $('#review-loading').removeClass('active');
+        }).fail(errorProcess);
+    };
+
+    this.getReviewDetailData = function () {
+        var next = 0;
+        var previous = 0;
+        var total_keyword = [];
+        $('#review-theme-checkbox:checked').each(function () {
+            total_keyword.push($(this).data('name'));
+        });
+
+        var data = {
+            pageSize: reviews.review_detail_size,
+            pageNo: reviews.review_detail_page,
+            pntVals: reviews.review_list_pnt_val,
+            rtype: reviews.review_list_mediaReviewType,
+            themeNm: total_keyword,
+            optNm: reviews.review_list_options,
+            sortType: reviews.review_list_sort_type,
+            appendable: true,
+            previous: previous,
+            next: next
+        };
+        return JSON.stringify(data);
+    }
+
+    this.setVideoPlay = function () {
+        var videoBox = $('.video-box'),
+            videoplayer = videoBox.find('video'),
+            videoEle = videoplayer[0],
+            keyControlStats = 'off';
+
+        if (videoEle === undefined) {
+            return;
+        }
+        videoEle.onloadedmetadata = function () {
+            $('.movie-play').on('click', function () {
+                if (!document.createElement('video').canPlayType) {
+                    return false;
+                }
+                videoplayer.attr('controls', 'controls');
+                $("#photo-review-play-btn").css('display', 'block');
+                videoEle.play();
+                keyControlStats = 'on';
+                timecontrol();
+
+                $(this).hide();
+                $(document).click(bodyClickCheck);
+            });
+
+            videoplayer.click(function () {
+                if (keyControlStats == 'off') {
+                    $(document).click(bodyClickCheck);
+                }
+            });
+
+            function timecontrol() {
+                $(document).keydown(function (e) {
+                    if (e.keyCode == '39' && keyControlStats == 'on') {
+                        var nowTime = parseInt(videoEle.currentTime);
+                        videoEle.currentTime = nowTime + 10;
+                    } else if (e.keyCode == '37' && keyControlStats == 'on') {
+                        var nowTime = parseInt(videoEle.currentTime);
+                        videoEle.currentTime = nowTime - 10;
+                    }
+                });
+            }
+
+            function bodyClickCheck(e) {
+                if ($(e.target).is('video, .video11box .btn_play, .video11box .ico_movreview')) {
+                    keyControlStats = 'on';
+                } else {
+                    keyControlStats = 'off';
+                    $(document).unbind('click', bodyClickCheck);
+                }
+            }
+        }
+    };
+
+    this.photoReviewListPopupEvent = function () {
+        $('.photoReviewBtn').on('click', function (e) {
+            var explorer9 = navigator.userAgent.toLowerCase().indexOf("msie 9") !== -1;
+            if (explorer9) {
+                alert('IE 9 에서는 이용 하실수 없습니다\n최신버전으로 Update 후 이용 가능 합니다');
+                return;
+            }
+            // parent
+            $('.review-photo-list-area').removeClass('active');
+
+            // parent
+            $("#photo-review-list-history-back").val(true);
+            $(this).parents().addClass('active');
+            $("#review-loading").addClass("active");
+            var pageNo = $(this).data('pageno');
+            if (pageNo !== undefined) {
+                reviews.photo_review_detail_page = $(this).data('pageno');
+            }
+            reviews.getPhotoReviewDetailWrap($(this).val(), $(this).attr('data-imgno'), false);
+        });
+    };
+
+    this.getPhotoReviewListWrap = function (next, selector) {
+        reviews.stopVideo(false);
+        var productNo = productPrdInfo.prdNo;
+        var photoReviewListUrl
+        if (reviews.isExplorer() || reviews.isPhoneShop()) {
+            photoReviewListUrl = "//www.11st.co.kr/products/" + productNo + "/photo-list-ie?size=35";
+        } else {
+            photoReviewListUrl = "//www.11st.co.kr/products/" + productNo + "/photo-list?size=35";
+        }
+        if (next) {
+            photoReviewListUrl += "&page=" + reviews.photo_review_list_page;
+        } else {
+            reviews.photo_review_list_page = 1;
+            if (!reviews.isExplorer() && !reviews.isPhoneShop()) {
+                $('#ar-dialogImg-photo-list').html('');
+            }
+        }
+        if (selector) {
+            if (reviews.selector_contentsMappingNo !== '' || reviews.selector_contentsMappingNo !== undefined) {
+                photoReviewListUrl += "&selector=" + reviews.selector_contentsMappingNo;
+            }
+        }
+
+        if (reviews.isExplorer() || reviews.isPhoneShop()) {
+            reviews.photoReviewListExplorer(photoReviewListUrl);
+        } else {
+            reviews.photoReviewListChrome(photoReviewListUrl);
+        }
+    };
+
+    this.photoReviewListChrome = function (photoReviewListUrl) {
+        return $.ajax({
+            url: photoReviewListUrl,
+            dataType: 'text',
+            contentType: 'text/html; charset=euc-kr'
+        }).success(function (data) {
+            if (data !== '') {
+                if ($("#pageEnd").val() !== undefined) {
+                    if ($("#pageEnd").val() === "true") {
+                        return;
+                    }
+                }
+                if ($("#photo-review-list-reload").val() !== undefined) {
+                    if ($("#photo-review-list-reload").val() === "true") {
+                        errorProcess();
+                    }
+                }
+                if (reviews.photo_review_list_page === 1) {
+                    $('#ar-dialogImg-photo-list').html(data);
+                } else {
+                    $('#photo-review-paged-list').append(data);
+                }
+                // $("#photoReviewList-count").text($('#ifrmReview').contents().find("#photo-review-gallery-count").val());
+                reviews.photoReviewListPopupScrollEvent();
+                reviews.photoReviewListPopupEvent();
+                $('#review-loading').removeClass('active');
+                $('#ar-dialogImg-photo-detail').css('display', 'none').attr('aria-hidden', true);
+                $('#ar-dialogImg-photo-list').css('display', 'block').attr('aria-hidden', false);
+                $('html').css('overflow', 'hidden');
+                $('html').addClass('c_product_dialog_ctrl');
+            } else {
+                $("#photo-review-scroll").off("scroll");
+                errorProcess();
+            }
+        }).fail(errorProcess);
+    };
+    this.photoReviewListExplorer = function (photoReviewListExplorer) {
+        window.open(photoReviewListExplorer,
+            "_popup", "width=" + 960 + "px,height=" + 647 + "px,scrollbars=no,status=no,location=no");
+    };
+
+    this.photoReviewListPopupScrollEvent = function () {
+        $("#photo-review-scroll").off("scroll").on("scroll", function () {
+            var scrollTop = $(this).scrollTop();
+            var innerHeight = $(this).innerHeight();
+            var scrollHeight = $(this).prop('scrollHeight');
+
+            if (scrollTop + innerHeight >= scrollHeight) {
+                reviews.photo_review_list_page++;
+                reviews.getPhotoReviewListWrap(true, false);
+            }
+        });
+
+        $("#photo-review-list-close").on('click', function () {
+            $('#ar-dialogImg-photo-list').css('display', 'none').attr('aria-hidden', true);
+            $('html').css('overflow', 'scroll');
+            $('html').removeClass('c_product_dialog_ctrl');
+            $('#ar-dialogImg-photo-list').empty();
+            $("#photo-review-detail").empty();
+        });
+    };
+
+    this.photoReviewDetailVideoClear = function () {
+        if ($('.photo-detail-video-box').length > 0) {
+            var $videos = $('.photo-detail-video-box').find('video');
+            $videos.each(function () {
+                this.pause();
+                delete this;
+                $(this).remove();
+            });
+        }
+    }
+
+    this.photoReviewDetailEvent = function (atf) {
+        $("#review-loading").removeClass("active");
+        // var height = (580 - 86 - 65 - 62) - ($("#photo-review-detail-grade").height() + $("#photo-review-detail-option").height() + $("#photo-detail-thumbnail-list").height());
+        // $("#photo-review-detail-content").height(height + 'px');
+
+        $("#photo-detail-close").on('click', function () {
+            $("#ar-dialogImg-photo-detail").css('display', 'none').attr('aria-hidden', true);
+            reviews.photoReviewDetailVideoClear();
+            rakeLog.sendRakeLog(this, 'click');
+            $('html').css('overflow', 'scroll');
+            $('html').removeClass('c_product_dialog_ctrl');
+            $('#ar-dialogImg-photo-list').empty();
+            $("#photo-review-detail").empty();
+        });
+
+        // $("#photo-detail-count").text($('#ifrmReview').contents().find("#photo-review-gallery-count").val());
+        $("#allPhotoReviewListBtn").on('click', function () {
+            reviews.photoReviewDetailVideoClear();
+            $('#review-loading').addClass('active');
+            var historyback = $("#photo-review-list-history-back").val();
+            if (historyback === 'true') {
+                $('#ar-dialogImg-photo-detail').css('display', 'none').attr('aria-hidden', true);
+                $('#ar-dialogImg-photo-list').css('display', 'block').attr('aria-hidden', false);
+                $('html').css('overflow', 'hidden');
+                $('html').addClass('c_product_dialog_ctrl');
+                return;
+            }
+            var contMapNo = $(this).data('contmapno');
+            var select = false;
+            if (contMapNo !== '' || contMapNo !== undefined) {
+                reviews.selector_contentsMappingNo = contMapNo;
+                select = true;
+            }
+            reviews.getPhotoReviewListWrap(false, select);
+        });
+
+        $('.review-report').on('click', function () {
+            var contNo = $(this).data('contno');
+            reviews.openReportPopups(contNo);
+        });
+
+        $('.photo-review-detail-previous').on('click', function () {
+            var prev_contMapNo = $(this).data('contmapno');
+            var prev_pageNo = $(this).data('pageno');
+            if (prev_pageNo !== undefined) {
+                reviews.photo_review_detail_page = prev_pageNo;
+            }
+            reviews.photoReviewDetailVideoClear();
+            $("#photo-review-list-history-back").val(false);
+            reviews.selector_contentsMappingNo = prev_contMapNo;
+            $("#review-loading").addClass("active");
+            if (atf !== undefined && atf) {
+                reviews.getPhotoReviewDetailWrap(prev_contMapNo, 0, true);
+            } else {
+                reviews.getPhotoReviewDetailWrap(prev_contMapNo, 0, false);
+            }
+
+        })
+
+        $('.photo-review-detail-next').on('click', function () {
+            var next_contMapNo = $(this).data('contmapno');
+            var next_pageNo = $(this).data('pageno');
+            if (next_pageNo !== undefined) {
+                reviews.photo_review_detail_page = next_pageNo;
+            }
+            reviews.photoReviewDetailVideoClear();
+            $("#photo-review-list-history-back").val(false);
+            reviews.selector_contentsMappingNo = next_contMapNo;
+            $("#review-loading").addClass("active");
+            if (atf !== undefined && atf) {
+                reviews.getPhotoReviewDetailWrap(next_contMapNo, 0, true);
+            } else {
+                reviews.getPhotoReviewDetailWrap(next_contMapNo, 0, false);
+            }
+        })
+
+        $('.seller_store_detail').on('click', function () {
+            var link = $(this).data('link');
+            if(link === null || link === '' || link === '#') {
+                return;
+            }
+            window.open(link, '_blank').focus();
+        });
+
+        return $("#photo-detail-contentsMappingNo").val();
+    };
+
+    this.openReportPopups = function (contNo) {
+        if (contNo === '' || contNo === null) {
+            return;
+        }
+        if (!funcCheckIsLogin()) {
+            openLogin(1);
+            return;
+        }
+        var url = "/products/reviews/report?contDclObjContCd=06&contDclObjClfCd=01&contNo=";
+        url += contNo * 1;
+        var ret = window.open(url, "reviewReportPopup", "width=500,height=555");
+    };
+
+    this.isPhoneShop = function () {
+        return window.location.host.indexOf('phone.11st.co.kr') > -1;
+    };
+
+    this.getPhotoReviewDetailWrap = function (contentsMappingNo, contentsImageNo, atf) {
+        if (!reviews.isExplorer() && !reviews.isPhoneShop()) {
+            $('#review-loading').addClass('active');
+        }
+
+        if (contentsMappingNo === '' || contentsMappingNo === null) {
+            return;
+        }
+        reviews.selector_contentsMappingNo = contentsMappingNo;
+
+        if (atf) {
+            if (reviews.isExplorer() || reviews.isPhoneShop()) {
+                reviews.atfPhotoReviewDetailWrapIE(contentsMappingNo, contentsImageNo);
+            } else {
+                reviews.atfPhotoReviewDetailWrapChrome(contentsMappingNo, contentsImageNo);
+            }
+        } else {
+            if (reviews.isExplorer() || reviews.isPhoneShop()) {
+                reviews.photoReviewDetailWrapIE(contentsMappingNo, contentsImageNo);
+            } else {
+                reviews.photoReviewDetailWrapChrome(contentsMappingNo, contentsImageNo);
+            }
+        }
+    };
+
+    this.photoReviewDetailWrapIE = function (contentsMappingNo, contentsImageNo) {
+        var url = "//www.11st.co.kr/products/" + productPrdInfo.prdNo + "/reviews/" + contentsMappingNo + "/photo-ie" + "?selector=" + contentsImageNo;
+        window.open(url, "_popup", "width=" + 960 + "px,height=" + 647 + "px,scrollbars=no,status=no,location=no");
+    };
+
+    this.atfPhotoReviewDetailWrapIE = function (contentsMappingNo, contentsImageNo) {
+        var url = "//www.11st.co.kr/products/" + productPrdInfo.prdNo + "/reviews/" + contentsMappingNo + "/photo-ie" + "?selector=" + contentsImageNo;
+        if (typeof reviewDetailType !== 'undefined') {
+            url = url + "&reviewDetailType=" + reviewDetailType;
+        }
+        window.open(url, "_popup", "width=" + 960 + "px,height=" + 647 + "px,scrollbars=no,status=no,location=no");
+    };
+
+    this.photoReviewDetailWrapChrome = function (contentsMappingNo, contentsImageNo) {
+        reviews.stopVideo(false);
+        var productNo = productPrdInfo.prdNo;
+        var detailUrl = "/products/" + productNo + "/reviews/" + contentsMappingNo + "/photo?type=gallery";
+        detailUrl += "&pageNo=" + reviews.photo_review_detail_page;
+        detailUrl += "&pageSize=" + reviews.photo_review_detail_size;
+        detailUrl += "&selector=" + contentsImageNo;
+        return $.ajax({
+            url: detailUrl,
+            dataType: 'text',
+            contentType: 'text/html; charset=euc-kr',
+        }).success(function (data) {
+            if (data !== '') {
+                $('#photo-review-detail').html(data);
+            } else {
+                errorProcess();
+            }
+        }).then(function () {
+            reviews.photoReviewThumbNailListEvent();
+            reviews.addPhotoReviewVideoPlay();
+            reviews.parentAddKkuk();
+            $('#review-loading').removeClass('active');
+            $('#ar-dialogImg-photo-list').css('display', 'none').attr('aria-hidden', true);
+            $('#ar-dialogImg-photo-list').empty();
+            $('#ar-dialogImg-photo-detail').css('display', 'block').attr('aria-hidden', false);
+            $('html').css('overflow', 'hidden');
+            $('html').addClass('c_product_dialog_ctrl');
+            reviews.photoReviewDetailEvent(false);
+        }).fail(errorProcess);
+    };
+
+    this.atfPhotoReviewDetailWrapChrome = function (contentsMappingNo, contentsImageNo) {
+        reviews.stopVideo(false);
+        var productNo = productPrdInfo.prdNo;
+        var detailUrl = "/products/" + productNo + "/reviews/" + contentsMappingNo + "/photo?type=gallery";
+        if (typeof (reviewDetailType !== 'undefined') && reviewDetailType === '02') {
+            detailUrl = detailUrl + "&reviewDetailType=" + reviewDetailType + "&bestPickReviewContentsMappingNos=" + bestPickReviewContentsMappingNos;
+        }
+        detailUrl += "&pageNo=" + reviews.photo_review_detail_page;
+        detailUrl += "&pageSize=" + reviews.photo_review_detail_size;
+        detailUrl += "&selector=" + contentsImageNo;
+        return $.ajax({
+            url: detailUrl,
+            dataType: 'text',
+            contentType: 'text/html; charset=euc-kr',
+        }).success(function (data) {
+            if (data !== '') {
+                $('#photo-review-detail').html(data);
+            } else {
+                errorProcess();
+            }
+        }).then(function () {
+            reviews.photoReviewThumbNailListEvent();
+            reviews.addPhotoReviewVideoPlay();
+            reviews.parentAddKkuk();
+            $('#review-loading').removeClass('active');
+            $('#ar-dialogImg-photo-list').css('display', 'none').attr('aria-hidden', true);
+            $('#ar-dialogImg-photo-list').empty();
+            $('#ar-dialogImg-photo-detail').css('display', 'block').attr('aria-hidden', false);
+            $('html').css('overflow', 'hidden');
+            $('html').addClass('c_product_dialog_ctrl');
+            reviews.photoReviewDetailEvent(true);
+        }).fail(errorProcess);
+    };
+
+    this.photoReviewThumbNailListEvent = function () {
+        $("#photo-detail-thumbnail-list").on("click", "li", function () {
+            reviews.photoReviewDetailVideoClear();
+            $(this).siblings().removeClass("active");
+            $(this).addClass("active");
+            var html = "";
+            var movieUrl = $(this).children('input[name="movieUrl"]').val();
+            var imageUrl = $(this).children('input[name="imageUrl"]').val();
+            $("#photo-detail-contentsNo").val($(this).data('contentsno'));
+            if (movieUrl !== undefined || movieUrl === '') {
+                html += '<div class="video11box photo-detail-video-box">';
+                html += '<video poster="' + imageUrl + '" playsinline muted="muted">'
+                html += '<source src="' + movieUrl + '">';
+                html += '<div class="nosupport">';
+                html += '<p>';
+                html += '인터넷 익스플로러 하위버전을 사용하고 있어 동영상이 노출이 되고 있지 않습니다. 최선버전을 다운로드해주세요.<br>'
+                html += '<a href="https://support.microsoft.com/ko-kr/help/17621/internet-explorer-downloads"';
+                html += 'target="blank">익스플로러 다운로드바로가기</a>';
+                html += '</p>';
+                html += '</div>';
+                html += '</video>';
+                html += '<div class="video_ctrl">';
+                html += '<button id="photo-review-play-btn" style="display: none" type="button" class="btn_play photo-review-movie-play"><span class="ico_mov">동영상재생</span></button>';
+                html += '<button id="photo-review-btn-replay" type="button" style="display: none" class="c_product_btn c_product_btn_replay">다시 보기</button>';
+                html += '<button id="photo-review-btn-pause" type="button" style="display: none" class="c_product_btn c_product_btn_pause">일시 정지</button>';
+                html += '</div>';
+                html += '</div>';
+            } else {
+                html = '<img src="' + $(this).children('input[name="imageUrl"]').val() + '" alt="">'
+            }
+            $("#photo-detail-contents-main").html(html);
+            reviews.addPhotoReviewVideoPlay();
+        });
+    };
+
+
+    this.addPhotoReviewVideoPlay = function () {
+        if (reviews.isExplorer() || reviews.isPhoneShop()) {
+            return;
+        }
+        var videoBox = $(".photo-detail-video-box"),
+            videoPlayer = videoBox.find('video'),
+            videoEle = videoPlayer[0],
+            keyControlStats = 'off';
+        if (videoEle === undefined) {
+            return;
+        }
+        videoPlayer.attr('controls', 'controls');
+        $("#photo-review-play-btn").css('display', 'block');
+
+        var loggingTag = document.getElementById('photo_review_detail_logging');
+
+        videoPlayer.on('play', function () {
+            $("#photo-review-play-btn").css('display', 'none');
+            $('#photo-review-btn-replay').css('display', 'none');
+            $(videoBox).mouseenter(function () {
+                $('#photo-review-btn-pause').css('display', 'block');
+            }).mouseleave(function () {
+                $('#photo-review-btn-pause').css('display', 'none');
+            });
+
+            if (loggingTag.getAttribute('data-log-actionid-label') !== 'movie_play_start') { //자동재생 로그 적재가 마지막 액션이면, 클릭 재생은 미적재함.
+                loggingTag.setAttribute('data-log-actionid-area', 'movie_review_popup');
+                loggingTag.setAttribute('data-log-actionid-label', 'movie_click_start');
+                loggingTag.setAttribute('data-log-body', reviews.getLogBody(productPrdInfo.prdNo, $('#review-detail-contentsNo').val(), 'N', videoEle.currentTime));
+                rakeLog.sendRakeLog(loggingTag, 'click');
+            }
+
+        });
+
+        videoPlayer.on('pause', function () {
+            $("#photo-review-play-btn").css('display', 'block');
+            $('#photo-review-btn-replay').css('display', 'none');
+            $('#photo-review-btn-pause').css('display', 'none');
+            $(videoBox).off();
+
+            //logging movie_click_stop && movie_play_end
+            loggingTag.setAttribute('data-log-actionid-area', 'movie_review_popup');
+            loggingTag.setAttribute('data-log-actionid-label', videoPlayer[0].ended ? 'movie_play_end' : 'movie_click_stop');
+            loggingTag.setAttribute('data-log-body', reviews.getLogBody(productPrdInfo.prdNo, $('#review-detail-contentsNo').val(), 'Y', videoEle.currentTime));
+            rakeLog.sendRakeLog(loggingTag, 'click');
+        });
+
+        videoPlayer.on('playing', function () {
+            $("#photo-review-play-btn").css('display', 'none');
+            $('#photo-review-btn-replay').css('display', 'none');
+            $(videoBox).mouseenter(function () {
+                $('#photo-review-btn-pause').css('display', 'block');
+            }).mouseleave(function () {
+                $('#photo-review-btn-pause').css('display', 'none');
+            });
+        });
+
+        videoPlayer.on('ended', function () {
+            $("#photo-review-play-btn").css('display', 'none');
+            $('#photo-review-btn-replay').css('display', 'block');
+            $('#photo-review-btn-pause').css('display', 'none');
+            $(videoBox).off();
+        });
+
+        let pastMuted = videoPlayer.get(0).muted;
+        videoPlayer.on('volumechange', function(e) {
+            if (pastMuted && !this.muted) {
+                $('#photoReviewVideoMutedLog').attr('data-log-body', reviews.getLogBody(productPrdInfo.prdNo, $('#review-detail-contentsNo').val(), 'Y', videoEle.currentTime));
+                rakeLog.sendRakeLog(document.getElementById("photoReviewVideoMutedLog"), 'click');
+            }
+            else {
+                pastMuted = this.muted;
+            }
+        });
+
+        videoEle.onloadedmetadata = function () {
+
+            if (!reviews.isExplorer() && !reviews.isPhoneShop()) {
+                //send auto play log too.
+                loggingTag.setAttribute('data-log-actionid-area', 'movie_review_popup');
+                loggingTag.setAttribute('data-log-actionid-label', 'movie_play_start');
+                loggingTag.setAttribute('data-log-body', reviews.getLogBody(productPrdInfo.prdNo, $('#review-detail-contentsNo').val(), 'Y', videoEle.currentTime));
+                rakeLog.sendRakeLog(loggingTag, 'click');
+                videoEle.play();
+            }
+
+            videoPlayer.click(function (e) {
+                if (keyControlStats == 'off') {
+                    $(document).click(bodyClickCheck);
+                }
+            });
+
+            function timecontrol() {
+                $(document).keydown(function (e) {
+                    if (e.keyCode == '39' && keyControlStats == 'on') {
+                        var nowTime = parseInt(videoEle.currentTime);
+                        videoEle.currentTime = nowTime + 10;
+                    } else if (e.keyCode == '37' && keyControlStats == 'on') {
+                        var nowTime = parseInt(videoEle.currentTime);
+                        videoEle.currentTime = nowTime - 10;
+                    }
+                });
+            }
+
+            function bodyClickCheck(e) {
+                if ($(e.target).is('video, .video11box .btn_play, .video11box .ico_movreview')) {
+                    keyControlStats = 'on';
+                } else {
+                    keyControlStats = 'off';
+                    $(document).unbind('click', bodyClickCheck);
+                }
+            }
+
+            $('.photo-review-movie-play').click(function () {
+                if (!document.createElement('video').canPlayType) {
+                    return false;
+                }
+                var videoInBox = $('.photo-detail-video-box'),
+                    videoInplayer = videoInBox.find('video');
+                videoInBox.attr('controls', 'controls');
+                videoInplayer[0].play();
+                keyControlStats = 'on';
+                timecontrol();
+
+                $(this).hide();
+                $(document).click(bodyClickCheck);
+            });
+
+            $('#photo-review-btn-replay').click(function () {
+                var videoInBox = $('.photo-detail-video-box'),
+                    videoInplayer = videoInBox.find('video');
+                videoInBox.attr('controls', 'controls');
+                videoInplayer[0].pause();
+                videoInplayer[0].currentTime = 0;
+                videoInplayer[0].play();
+                keyControlStats = 'on';
+                timecontrol();
+                $(this).hide();
+                $(document).click(bodyClickCheck);
+            });
+
+            $('#photo-review-btn-pause').on('click', function () {
+                var videoInBox = $('.photo-detail-video-box'),
+                    videoInplayer = videoInBox.find('video');
+                videoInplayer[0].pause();
+                keyControlStats = 'on';
+                $(this).hide();
+            });
+        }
+    };
+
+    this.reviewDetailVideoClear = function () {
+        if ($('.detail-video-box').length > 0) {
+            var $videos = $('.detail-video-box').find('video');
+            $videos.each(function () {
+                this.pause();
+                delete this;
+                $(this).remove();
+            });
+        }
+    };
+
+    this.reviewDetailPopupEvent = function () {
+        // var height = (580 - 86 - 65 - 62) - ($("#review-detail-grade").height() + $("#review-detail-option").height() + $("#detail-thumbnail-list").height());
+        // $("#review-detail-content").height(height + 'px');
+
+        reviews.selector_contentsMappingNo = $("#detail-contentsMappingNo").val();
+        $('#review-theme-checkbox').on('click', function () {
+            reviews.review_list_page = 1;
+            reviews.getPagedReviewList();
+        });
+
+        $("#detail-close").on('click', function () {
+            $("#ar-dialogImg-list-detail").css('display', 'none').attr('aria-hidden', true);
+            rakeLog.sendRakeLog(this, 'click');
+            reviews.reviewDetailVideoClear();
+            $('html').css('overflow', 'scroll');
+            $('html').removeClass('c_product_dialog_ctrl');
+            $("#review-list-detail-div").empty();
+        });
+
+        $('.review-report').on('click', function () {
+            var contNo = $(this).data('contno');
+            reviews.openReportPopups(contNo);
+        });
+
+        $('.review-detail-previous').on('click', function () {
+            var prev_contMapNo = $(this).data('contmapno');
+            var prev_pageNo = $(this).data('pageno');
+            if (prev_pageNo !== undefined) {
+                reviews.review_detail_page = prev_pageNo;
+            }
+            rakeLog.sendRakeLog(this, 'click');
+            reviews.reviewDetailVideoClear();
+            $("#review-list-detail-div").empty();
+            reviews.getReviewDetailWrap(prev_contMapNo, 0);
+        });
+
+        $('.review-detail-next').on('click', function () {
+            var next_contMapNo = $(this).data('contmapno');
+            var next_pageNo = $(this).data('pageno');
+            if (next_pageNo !== undefined) {
+                reviews.review_detail_page = next_pageNo;
+            }
+            rakeLog.sendRakeLog(this, 'click');
+            reviews.reviewDetailVideoClear();
+            $("#review-list-detail-div").empty();
+            reviews.getReviewDetailWrap(next_contMapNo, 0);
+        });
+
+        $('.seller_store_detail').on('click', function () {
+            var link = $(this).data('link');
+            if(link === null || link === '' || link === '#') {
+                return;
+            }
+            window.open(link, '_blank').focus();
+        });
+    };
+
+    this.reviewDetailPopupThumbnailEvent = function () {
+        $("#detail-thumbnail-list").on("click", "li", function () {
+            reviews.reviewDetailVideoClear();
+            $(this).siblings().removeClass("active");
+            $(this).addClass("active");
+            var html = "";
+            var movieUrl = $(this).children('input[name="movieUrl"]').val();
+            var imageUrl = $(this).children('input[name="imageUrl"]').val();
+            $("#review-detail-contentsNo").val($(this).data('contentsno'));
+            if (movieUrl !== undefined || movieUrl === '') {
+                html += '<div class="video11box detail-video-box">';
+                html += '<video poster="' + imageUrl + '" playsinline muted="muted" >'
+                html += '<source src="' + movieUrl + '" >';
+                html += '<div class="nosupport">';
+                html += '<p>';
+                html += '인터넷 익스플로러 하위버전을 사용하고 있어 동영상이 노출이 되고 있지 않습니다. 최선버전을 다운로드해주세요.<br>'
+                html += '<a href="https://support.microsoft.com/ko-kr/help/17621/internet-explorer-downloads"';
+                html += 'target="blank">익스플로러 다운로드바로가기</a>';
+                html += '</p>';
+                html += '</div>';
+                html += '</video>';
+                html += '<div class="video_ctrl">';
+                html += '<button id="review-detail-play-btn" style="display: none" type="button" class="btn_play review-detail-movie-play"><span class="ico_mov">동영상재생</span></button>';
+                html += '<button type="button" style="display: none" id="review-detail-btn-replay" class="c_product_btn c_product_btn_replay">다시 보기</button>';
+                html += '<button type="button" style="display: none" id="review-detail-btn-pause" class="c_product_btn c_product_btn_pause">일시 정지 </button>';
+                html += '</div>';
+                html += '</div>';
+            } else {
+                html = '<img src="' + $(this).children('input[name="imageUrl"]').val() + '" alt="">'
+            }
+            $("#detail-contents-main").html(html);
+            reviews.addReviewDetailVideoPlay();
+        });
+    };
+
+    this.addReviewDetailVideoPlay = function () {
+        if (reviews.isExplorer() || reviews.isPhoneShop()) {
+            return;
+        }
+
+        var videoBox = $('.detail-video-box'),
+            videoPlayer = videoBox.find('video'),
+            videoEle = videoPlayer[0],
+            keyControlStats = 'off';
+        if (videoEle === undefined) {
+            return;
+        }
+
+        var loggingTag = document.getElementById('review_detail_logging');
+
+        $("#review-detail-play-btn").css('display', 'block');
+        videoPlayer.attr('controls', 'controls');
+
+
+
+        videoPlayer.on('play', function () {
+            $("#review-detail-play-btn").css('display', 'none');
+            $('#review-detail-btn-replay').css('display', 'none');
+
+            if (loggingTag.getAttribute('data-log-actionid-label') !== 'movie_play_start') { //자동재생 로그 적재가 마지막 액션이면, 클릭 재생은 미적재함.
+                loggingTag.setAttribute('data-log-actionid-area', 'review_popup');
+                loggingTag.setAttribute('data-log-actionid-label', 'movie_click_start');
+                loggingTag.setAttribute('data-log-body', reviews.getLogBody(productPrdInfo.prdNo, $('#photo-detail-contentsNo').val(), 'N', videoEle.currentTime));
+                rakeLog.sendRakeLog(loggingTag, 'click');
+            }
+        });
+
+        videoPlayer.on('pause', function () {
+            $("#review-detail-play-btn").css('display', 'block');
+            $('#review-detail-btn-replay').css('display', 'none');
+            $('#review-detail-btn-pause').css('display', 'none');
+            $(videoBox).off();
+
+            //logging movie_click_stop && movie_play_end
+            loggingTag.setAttribute('data-log-actionid-area', 'review_popup');
+            loggingTag.setAttribute('data-log-actionid-label', videoPlayer[0].ended ? 'movie_play_end' : 'movie_click_stop');
+            loggingTag.setAttribute('data-log-body', reviews.getLogBody(productPrdInfo.prdNo, $('#review-detail-contentsNo').val(), 'Y', videoEle.currentTime));
+            rakeLog.sendRakeLog(loggingTag, 'click');
+        });
+
+        videoPlayer.on('playing', function () {
+            $("#review-detail-play-btn").css('display', 'none');
+            $('#review-detail-btn-replay').css('display', 'none');
+            $(videoBox).mouseenter(function () {
+                $('#review-detail-btn-pause').css('display', 'block');
+            }).mouseleave(function () {
+                $('#review-detail-btn-pause').css('display', 'none');
+            });
+        });
+
+        videoPlayer.on('ended', function () {
+            $("#review-detail-play-btn").css('display', 'none');
+            $('#review-detail-btn-replay').css('display', 'block');
+            $('#review-detail-btn-pause').css('display', 'none');
+            $(videoBox).off();
+        });
+
+        let pastMuted = videoPlayer.get(0).muted;
+        videoPlayer.on('volumechange', function(e) {
+            if (pastMuted && !this.muted) {
+                $('#reviewDetailVideoMutedLog').attr('data-log-body', reviews.getLogBody(productPrdInfo.prdNo, $('#review-detail-contentsNo').val(), 'Y', videoEle.currentTime));
+                rakeLog.sendRakeLog(document.getElementById("reviewDetailVideoMutedLog"), 'click');
+            }
+            else {
+                pastMuted = this.muted;
+            }
+        });
+
+        videoEle.onloadedmetadata = function () {
+
+            if (!reviews.isExplorer() && !reviews.isPhoneShop()) {
+                loggingTag.setAttribute('data-log-actionid-area', 'review_popup');
+                loggingTag.setAttribute('data-log-actionid-label', 'movie_play_start');
+                loggingTag.setAttribute('data-log-body', reviews.getLogBody(productPrdInfo.prdNo, $('#review-detail-contentsNo').val(), 'Y', videoEle.currentTime));
+                rakeLog.sendRakeLog(loggingTag, 'click');
+
+                videoEle.play();
+            }
+
+            $('.review-detail-movie-play').click(function () {
+                if (!document.createElement('video').canPlayType) {
+                    return false;
+                }
+                var videoInBox = $('.detail-video-box'),
+                    videoInplayer = videoInBox.find('video');
+
+                videoInplayer.attr('controls', 'controls');
+                videoInplayer[0].play();
+                keyControlStats = 'on';
+                timecontrol();
+
+                $(this).hide();
+                $(document).click(bodyClickCheck);
+
+            });
+
+            $('#review-detail-btn-replay').on('click', function () {
+                var videoInBox = $('.detail-video-box'),
+                    videoInplayer = videoInBox.find('video');
+
+                videoInplayer.attr('controls', 'controls');
+                videoInplayer[0].pause();
+                videoInplayer[0].currentTime = 0;
+                videoInplayer[0].play();
+                keyControlStats = 'on';
+                timecontrol();
+                $(this).hide();
+                $(document).click(bodyClickCheck);
+            });
+
+            $("#review-detail-btn-pause").on('click', function () {
+                var videoInBox = $('.detail-video-box'),
+                    videoInplayer = videoInBox.find('video');
+                videoInplayer[0].pause();
+            });
+
+            videoPlayer.click(function () {
+                if (keyControlStats == 'off') {
+                    $(document).click(bodyClickCheck);
+                }
+            });
+
+            function timecontrol() {
+                $(document).keydown(function (e) {
+                    if (e.keyCode == '39' && keyControlStats == 'on') {
+                        var nowTime = parseInt(videoEle.currentTime);
+                        videoEle.currentTime = nowTime + 10;
+                    } else if (e.keyCode == '37' && keyControlStats == 'on') {
+                        var nowTime = parseInt(videoEle.currentTime);
+                        videoEle.currentTime = nowTime - 10;
+                    }
+                });
+            }
+
+            function bodyClickCheck(e) {
+                if ($(e.target).is('video, .video11box .btn_play, .video11box .ico_movreview')) {
+                    keyControlStats = 'on';
+                } else {
+                    keyControlStats = 'off';
+                    $(document).unbind('click', bodyClickCheck);
+                }
+            }
+        }
+
+    };
+
+    this.reviewSummaryPhotoReviewBtnEvent = function () {
+        if (!reviews.isExplorer() && !reviews.isPhoneShop()) {
+            $('#ar-dialogImg-photo-detail').css('display', 'block').attr('aria-hidden', false);
+            $('html').css('overflow', 'hidden');
+            $('html').addClass('c_product_dialog_ctrl');
+        }
+    };
+
+    this.reviewListDetailEvent = function () {
+        reviews.stopVideo(false);
+        if (!reviews.isExplorer() && !reviews.isPhoneShop()) {
+            $('#ar-dialogImg-list-detail').css('display', 'block').attr('aria-hidden', false);
+            $('html').css('overflow', 'hidden');
+            $('html').addClass('c_product_dialog_ctrl');
+        }
+        $('.review-report').on('click', function () {
+            var contNo = $(this).data('contno');
+            reviews.openReportPopups(contNo);
+        });
+    };
+
+    this.atfReviewEvent = function () {
+        $("a[name='review-atf']").on('click', function () {
+            var explorer9 = navigator.userAgent.toLowerCase().indexOf("msie 9") !== -1;
+            if (explorer9) {
+                alert('IE 9 에서는 이용 하실수 없습니다\n최신버전으로 Update 후 이용 가능 합니다');
+                return;
+            }
+            reviews.reviewSummaryPhotoReviewBtnEvent();
+            reviews.getPhotoReviewDetailWrap($(this).data('contmapno'), 0, true);
+            // reviews.getReviewDetailWrap($(this).data('contmapno'), 0, true);
+            if (!reviews.isExplorer() && !reviews.isPhoneShop()) {
+                // $("#ar-dialogImg-list-detail").css('display', 'block').attr('aria-hidden', true);
+                $('html').css('overflow', 'hidden');
+                $('html').addClass('c_product_dialog_ctrl');
+            }
+        });
+
+        var atfPhotoReviewListBtn = $("#atf-photo-review-list");
+        if (atfPhotoReviewListBtn !== undefined) {
+            atfPhotoReviewListBtn.on("click", function () {
+                reviews.getPhotoReviewListWrap(false, false);
+            });
+        }
+    };
+
+    this.loginFunc = function (targetUrl) {
+        if (targetUrl !== "") {
+            openLogin(1, "", targetUrl + "");
+        }
+        openLogin(1);
+    };
+
+    this.parentAddKkuk = function () {
+        $('.kkuk').off('click').on('click', function (e) {
+            if (!funcCheckIsLogin()) {
+                openLogin(1);
+                return;
+            }
+            var contMapNo = $(this).data('contmapno');
+            var kkukCount = $(this).children('.kkukCount').text();
+            kkukCount = parseInt(kkukCount.replace(/,/g, ''));
+
+            var parentKkukBtn = "#buttonKkuk" + contMapNo;
+            var parentKkukCount = "#kkukCount" + contMapNo;
+
+            if ($(this).hasClass("active")) {
+                kkukCount = kkukCount - 1;
+                $(this).removeClass("active");
+                $(this).children('.kkukCount').text(kkukCount.toLocaleString());
+                $('#ifrmReview').contents().find(parentKkukCount).text(kkukCount.toLocaleString());
+                $('#ifrmReview').contents().find(parentKkukBtn).removeClass("active");
+                $("#review-detail-kkuk-text").css('display', 'block');
+                $("#photo-review-detail-kkuk-text").css('display', 'block');
+                $(this).attr('data-log-body', '{"current_product_no" : ' + $(this).data('productno') + ', "check_value" : "off"' + ', "label_type" : ' + contMapNo + '}');
+            } else {
+                kkukCount = kkukCount + 1;
+                $(this).addClass("active");
+                $(this).children('.kkukCount').text(kkukCount.toLocaleString());
+                $('#ifrmReview').contents().find(parentKkukCount).text(kkukCount.toLocaleString());
+                $('#ifrmReview').contents().find(parentKkukBtn).addClass("active");
+                $("#review-detail-kkuk-text").css('display', 'none');
+                $(this).attr('data-log-body', '{"current_product_no" : ' + $(this).data('productno') + ', "check_value" : "on"' + ', "label_type" : ' + contMapNo + '}');
+                $("#photo-review-detail-kkuk-text").css('display', 'none');
+            }
+            if (contMapNo === '' || contMapNo === null) {
+                return;
+            }
+            return $.ajax({
+                url: "/products/reviews/" + contMapNo + "/kkuk",
+                dataType: 'text',
+                contentType: 'text/html; charset=euc-kr'
+            }).success(function (data) {
+            }).fail(function (error) {
+                console.error(error);
+            });
+        });
+    };
+
+    this.reviewSummaryVideo = function () {
+        if (reviews.isExplorer() || reviews.isPhoneShop()) {
+            return;
+        }
+        var beforePoint = $(window).scrollTop();
+
+        var vElement = $('#ifrmReview').contents().find('.summary-video-box');
+        var v = vElement.find('video')[0];
+        if (v === undefined) {
+            reviews.video_auto_play = false;
+            return;
+        }
+
+        $(window).scroll(function () {
+            if (reviews.summary_video === undefined) {
+                reviews.video_auto_play = false;
+                return;
+            }
+
+            var currentScrollTop = $(window).scrollTop();
+
+            if (reviews.summary_videoElement.length > 0) {
+                var videoElementTopPoint = reviews.summary_videoElement.offset().top + $('#ifrmReview').offset().top;
+
+                var windowBottomPoint = currentScrollTop + $(window).innerHeight();
+
+                // top에서 멀어질 수록 값이 크다
+                if (beforePoint <= currentScrollTop) {
+                    var firstMovieOffsetEighty = videoElementTopPoint + (reviews.summary_videoElement.innerHeight() * 0.8);
+                    var firstMovieOffsetThirty = videoElementTopPoint + (reviews.summary_videoElement.innerHeight() * 0.3);
+
+                    if (windowBottomPoint + 30 > firstMovieOffsetThirty && currentScrollTop - 30 < firstMovieOffsetEighty) {
+                        if (reviews.video_auto_play) {
+                            if (reviews.summary_video.paused) {
+                                reviews.summary_video.pause();
+                                reviews.summary_video.currentTime = 0;
+                                reviews.summary_video.play();
+                                reviews.endLogSend = 0;
+                                reviews.stopLogSend = 0;
+                                if (reviews.playLogSend === 0) {
+                                    document.getElementById("ifrmReview").contentWindow.sendVideoLogFunction('start', 'Y', reviews.summary_video.currentTime);
+                                    reviews.playLogSend++;
+                                }
+
+                                reviews.video_auto_play = false;
+                            }
+                        }
+                    } else {
+                        if (reviews.summary_video.paused === false) {
+                            reviews.summary_video.pause();
+                            reviews.playLogSend = 0;
+                            reviews.endLogSend = 0;
+                            if (reviews.stopLogSend === 0) {
+                                document.getElementById("ifrmReview").contentWindow.sendVideoLogFunction('stop', 'Y', reviews.summary_video.currentTime);
+                                reviews.stopLogSend++;
+                            }
+
+                            reviews.video_auto_play = true;
+                        }
+                    }
+                } else {
+                    // top < 70% and bottom < 20%
+                    var firstMovieOffsetSeventy = videoElementTopPoint + (reviews.summary_videoElement.innerHeight() * 0.7);
+                    var firstMovieOffsetTwenty = videoElementTopPoint + (reviews.summary_videoElement.innerHeight() * 0.2);
+
+                    if (currentScrollTop < firstMovieOffsetSeventy && windowBottomPoint > firstMovieOffsetTwenty) {
+                        if (reviews.video_auto_play) {
+                            if (reviews.summary_video.paused) {
+                                reviews.summary_video.pause();
+                                reviews.summary_video.currentTime = 0;
+                                reviews.summary_video.play();
+                                reviews.endLogSend = 0;
+                                reviews.stopLogSend = 0;
+                                if (reviews.playLogSend === 0) {
+                                    document.getElementById("ifrmReview").contentWindow.sendVideoLogFunction('start', 'Y', reviews.summary_video.currentTime);
+                                    reviews.playLogSend++;
+                                }
+                                reviews.video_auto_play = false;
+                            }
+                        }
+                    } else {
+                        if (reviews.summary_video.paused === false) {
+                            reviews.summary_video.pause();
+                            reviews.playLogSend = 0;
+                            reviews.endLogSend = 0;
+                            if (reviews.stopLogSend === 0) {
+                                document.getElementById("ifrmReview").contentWindow.sendVideoLogFunction('stop', 'Y', reviews.summary_video.currentTime);
+                                reviews.stopLogSend++;
+                            }
+                        }
+                        reviews.video_auto_play = true;
+                    }
+                }
+                beforePoint = $(window).scrollTop();
+
+                reviews.addSummaryVideoEvent();
+            }
+        });
+    };
+
+    this.addSummaryVideoEvent = function () {
+        if (reviews.isExplorer() || reviews.isPhoneShop()) {
+            return;
+        }
+        var videoElement = $('#ifrmReview').contents().find('.summary-video-box');
+        var videoPlayer = videoElement.find('video');
+
+        videoPlayer.attr('controls', 'controls');
+
+        videoPlayer.on('pause', function () {
+            if (reviews.stopLogSend === 0) {
+                document.getElementById("ifrmReview").contentWindow.sendVideoLogFunction('stop', 'N', reviews.summary_video.currentTime);
+                reviews.stopLogSend++;
+            }
+            reviews.playLogSend = 0;
+            reviews.endLogSend = 0;
+            $('#ifrmReview').contents().find("#review-summary-play-btn").css('display', 'block');
+            $('#ifrmReview').contents().find('#review-summary-btn-replay').css('display', 'none');
+            $('#ifrmReview').contents().find('.summaryVideoImageCount').css('display', 'none');
+            $('#ifrmReview').contents().find('#review-summary-btn-pause').css('display', 'none');
+            $('#ifrmReview').contents().find('.summary-video-box').off();
+            $('#ifrmReview').contents().find('#review-summary-btn-pause').css('display', 'none');
+        });
+
+        videoPlayer.on('playing', function () {
+            var frameContents = $('#ifrmReview').contents();
+            $(frameContents).find("#review-summary-play-btn").css('display', 'none');
+            $(frameContents).find('#review-summary-btn-replay').css('display', 'none');
+            $(frameContents).find('.summaryVideoImageCount').css('display', 'none');
+            $(frameContents).find('.summary-video-box').mouseenter(function () {
+                $(frameContents).find('#review-summary-btn-pause').css('display', 'block');
+            }).mouseleave(function () {
+                $(frameContents).find('#review-summary-btn-pause').css('display', 'none');
+            });
+        });
+
+        videoPlayer.on('play', function () {
+            var frameContents = $('#ifrmReview').contents();
+            $(frameContents).find("#review-summary-play-btn").css('display', 'none');
+            $(frameContents).find('#review-summary-btn-replay').css('display', 'none');
+            $(frameContents).find('.summaryVideoImageCount').css('display', 'none');
+            if (reviews.playLogSend === 0) {
+                document.getElementById("ifrmReview").contentWindow.sendVideoLogFunction('start', 'N', reviews.summary_video.currentTime);
+                reviews.playLogSend++;
+            }
+            reviews.stopLogSend = 0;
+            reviews.endLogSend = 0;
+            $(frameContents).find('.summary-video-box').mouseenter(function () {
+                $(frameContents).find('#review-summary-btn-pause').css('display', 'block');
+            }).mouseleave(function () {
+                $(frameContents).find('#review-summary-btn-pause').css('display', 'none');
+            });
+        });
+
+        videoPlayer.on('ended', function () {
+            var frameContents = $('#ifrmReview').contents();
+            if (reviews.endLogSend === 0) {
+                document.getElementById("ifrmReview").contentWindow.sendVideoLogFunction('end', 'N', reviews.summary_video.currentTime);
+                reviews.endLogSend++;
+            }
+            reviews.playLogSend = 0;
+            $(frameContents).find('#review-summary-btn-replay').css('display', 'block');
+            $(frameContents).find('.summaryVideoImageCount').css('display', 'none');
+            $(frameContents).find("#review-summary-play-btn").css('display', 'none');
+            $(frameContents).find('#review-summary-btn-pause').css('display', 'none')
+            $(frameContents).find('.summary-video-box').off();
+        });
+    };
+
+    this.stopVideo = function (log) {
+        if (reviews.isExplorer() || reviews.isPhoneShop()) {
+            return;
+        }
+        if (reviews.summary_video !== undefined && reviews.summary_video !== 0) {
+            reviews.stopLogSend++;
+            reviews.summary_video.pause();
+            if (log) {
+                document.getElementById("ifrmReview").contentWindow.sendVideoLogFunction('stop', 'Y', reviews.summary_video.currentTime);
+            }
+            reviews.playLogSend = 0;
+            reviews.endLogSend = 0;
+        }
+    };
+
+    this.inLoading = function () {
+        $("#review-loading").addClass("active");
+    }
+
+    this.goToReviewEpgPage = function () {
+        location.href = 'http://soffice.11st.co.kr/html/reviewepg/experience_main.html';
+    };
+
+    this.isExplorer = function () {
+        return (navigator.appName == 'Netscape' && navigator.userAgent.toLowerCase().indexOf('trident') != -1) || (navigator.userAgent.toLowerCase().indexOf("msie") != -1)
+    }
+
+    this.setSummaryVideoSetting = function () {
+        reviews.summary_videoElement = $('#ifrmReview').contents().find('.summary-video-box');
+        reviews.summary_videoPlayer = reviews.summary_videoElement.find('video');
+        reviews.summary_video = reviews.summary_videoPlayer[0];
+    }
+
+
+    this.applyShadow = function () {
+        if ($('.c_product_reviewdetail_inner').prop('scrollHeight') > $('.c_product_reviewdetail_inner').innerHeight()) {
+            $('.c_product_review_btn3').addClass('shadow');
+            $('.c_product_reviewdetail_inner').on("scroll", function () {
+                var scrollTop = $('.c_product_reviewdetail_inner').scrollTop();
+                var innerHeight = $('.c_product_reviewdetail_inner').innerHeight();
+                var scrollHeight = $('.c_product_reviewdetail_inner').prop('scrollHeight');
+                if ((scrollTop + innerHeight) >= scrollHeight) {
+                    if ($('.c_product_review_btn3').hasClass('shadow')) {
+                        $('.c_product_review_btn3').removeClass('shadow');
+                    }
+                } else {
+                    if (!$('.c_product_review_btn3').hasClass('shadow')) {
+                        $('.c_product_review_btn3').addClass('shadow');
+                    }
+                }
+            });
+        }
+    };
+
+    this.goToStore = function (storeUrl) {
+        window.open(storeUrl, '_blank').focus();
+    };
+
+    this.errorProcessParent = function () {
+        errorProcess();
+    };
+
+    this.getLogBody = function (productNo, movieNo, autoPlay, lapTime) {
+        var logBody = {};
+        logBody.current_product_no = productNo;
+        var movie_object = {};
+        movie_object.product_no = productNo;
+        movie_object.movie_no = movieNo;
+        movie_object.movie_auto_play_yn = autoPlay;
+        movie_object.movie_laptime = Math.floor(lapTime);
+        logBody.movie_object = movie_object;
+        if ($('#photo-detail-isBestPickReview').val()) {
+            logBody.label_type = $('#photo-detail-contentsMappingNo').val();
+        }
+        return JSON.stringify(logBody);
+    }
+};
+
+var reviews = new reviewWraps();
+
+function errorProcess() {
+    $('#ar-dialogImg-list-detail').css('display', 'none').attr('aria-hidden', true);
+    $('#ar-dialogImg-photo-list').css('display', 'none').attr('aria-hidden', true);
+    $('#ar-dialogImg-photo-detail').css('display', 'none').attr('aria-hidden', true);
+    $('#review-list-detail-div').html('');
+    $('html').css('overflow', '');
+    $('html').removeClass('c_product_dialog_ctrl');
+    $('#review-loading').removeClass('active');
+
+    alert('리뷰 정보를 불러오는 데 시간이 걸립니다. 다시 시도해 주세요.');
+}
+
+function openStorePopup(url) {
+    window.open(url,'_blank').focus();
+}

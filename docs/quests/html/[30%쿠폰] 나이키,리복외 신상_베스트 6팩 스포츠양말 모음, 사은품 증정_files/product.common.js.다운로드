@@ -1,0 +1,282 @@
+'use strict';
+require([
+    '/js/require/config.js'
+], function () {
+    // 메인에서만 사용하는 경로 설정
+    require.config({
+        paths: {
+            'productLayout': jsVersionPath + '/product.layout',
+            'setItem': jsVersionPath + '/product.setItem',
+            'customOptionBot': jsVersionPath + '/custom.optionBot',
+            'stdPrdOptionBot': jsVersionPath + '/custom.prdOptionBot',
+            'productImage': jsVersionPath + '/productImage',
+            'productVideo': jsVersionPath + '/productVideo',
+            'categoryNavigation': jsVersionPath + '/categoryNavigation',
+            'productDeal': jsVersionPath + '/productDeal',
+            'productCoupon': jsVersionPath + '/productCoupon',
+            'helpCommon': jsVersionPath + '/helpCommon',
+            'kakao': 'lib/kakao/kakao-1.1.4.min',
+            'snsPost': jsVersionPath + '/snsPost',
+            'productLike': jsVersionPath + '/productLike',
+            'delivery': jsVersionPath + '/delivery',
+            'store': jsVersionPath + '/store',
+
+            'customAddPrdBot': jsVersionPath + '/custom.addPrdBot',
+            'slider': jsVersionPath + '/slider',
+            'powerLink': jsVersionPath + '/powerLink',
+
+            'myCupnInfo': jsVersionPath + '/myCupnInfo',	     //마이쿠폰 정보	#작업중
+            'orderInfo': jsVersionPath + '/orderInfo',	     //주문			#작업중
+            'inCart': jsVersionPath + '/inCart',
+            'productCommon': jsVersionPath + '/productCommon',	 //공통function
+
+            'productInfo': jsVersionPath + '/productInfo',       //상품정보영역
+            'productStdView': jsVersionPath + '/productStandardView',	// 표준상품 관련
+            'recommend': jsVersionPath + '/recommend',
+            'sellerTabInfo': jsVersionPath + '/sellerTabInfo',
+            'customBuyInventory': jsVersionPath + '/custom.buyInventory',
+            'productReturn': jsVersionPath + '/productReturn',
+            'todayDeliveryPromotion' : jsVersionPath + '/todayDeliveryPromotion',
+            'ocr' : jsVersionPath + '/ocr'
+        }
+    });
+
+
+    // IE8 이하 업그레이드 권고 배너 삽입 (최상단 배너)
+    var useragent = navigator.userAgent.toLowerCase();
+    var isIE6 = (useragent.indexOf("msie 6") != -1) ? true : false;
+    var isIE7 = (useragent.indexOf("msie 7") != -1) ? true : false;
+    var isIE8 = (useragent.indexOf("msie 8") != -1) ? true : false;
+
+    if (document.URL.indexOf('SellerProductDetail')) {
+        if (isIE6 || isIE7 || isIE8) {
+            $('#skipNavi').before(
+                '    <div class="bnr_upgrade_box">\n' +
+                '        <a href="//plan.11st.co.kr/plan/front/exhibitions/2012749/detail"><img src="//www.11st.co.kr/img/main/v2/bnr_upgrade.png" alt="내 PC를 더 안전하게! Internet Explorer 11 업그레이드"></a>\n' +
+                '    </div>'
+            )
+        }
+    }
+
+    require([
+        'jquery',
+        'handlebars'
+    ], function($, handlebars) {
+
+        var isIE9 = (navigator.userAgent.toLowerCase().indexOf("msie 9") !== -1);
+        $(window).on('message', function(e) {
+            var datas;
+            if (isIE9) {
+                datas = $.parseJSON(e.originalEvent.data);
+            } else {
+                datas = e.originalEvent.data;
+            }
+
+            if (datas && datas.qna) {
+                if (datas.targetFrm && datas.qnaHeight) {
+                    $('#' + datas.targetFrm).attr('height', datas.qnaHeight + 50);
+                    $(window).trigger("resize");
+                    return;
+                } else if (datas.eventNm) {
+                    $(window).trigger(datas.eventNm);
+                    return;
+                }
+            }
+
+            if (datas.hasOwnProperty('frameHeight')) {
+                $('#ifrmReview').attr('height', datas.frameHeight + 30);
+                $(window).trigger("resize");
+            }
+
+            if (datas.hasOwnProperty('frameHeightOfDesc')) {
+                var prdDescIfrm = $('#prdDescIfrm');
+                if (prdDescIfrm !== undefined) {
+                    prdDescIfrm.attr('height', datas.frameHeightOfDesc);
+                }
+                $(window).trigger("resize");
+            }
+
+            if (datas.hasOwnProperty('frameHeightOfStdDesc')) {
+                var stdPrdViewDescIfrm = $('#stdPrdViewDescIfrm');
+                if (stdPrdViewDescIfrm !== undefined) {
+                    stdPrdViewDescIfrm.attr('height', datas.frameHeightOfStdDesc);
+                }
+                $(window).trigger("resize");
+            }
+
+            if (datas.hasOwnProperty('functionName')) {
+                if (datas.hasOwnProperty('params')) {
+                    reviews[datas.functionName](datas.params);
+                } else {
+                    reviews[datas.functionName]();
+                }
+            } else {
+                if (datas.hasOwnProperty('params') && datas.hasOwnProperty('value')) {
+                    reviews[datas.params] = datas.value;
+                }
+            }
+
+            if (datas.hasOwnProperty('htmls') && datas.hasOwnProperty('targetArea') && datas.hasOwnProperty('append')) {
+                reviewDetailPopup(datas.htmls, datas.targetArea, datas.append);
+            }
+        });
+
+        require(['categoryNavigation'], function(categoryNavigation) {
+            categoryNavigation.init();
+        });
+
+        require(['productInfo'], function(productInfo) {
+            productInfo.init();
+        });
+
+        require(['productDeal'], function(productDeal) {
+            productDeal.init();
+        });
+
+        // 공유하기
+        require(['snsPost'], function(SnsPost) {
+            SnsPost.init();
+        });
+
+        // 좋아요
+        require(['productLike'], function(productLike) {
+            productLike.init();
+        });
+        require(['todayDeliveryPromotion'], function(todayDeliveryPromotion) {
+            todayDeliveryPromotion.init();
+        });
+        require(['helpCommon'], function(helpCommon) {
+            helpCommon.init();
+        });
+
+        require(['productCommon'], function(ProductCommon) {
+            ProductCommon.init();
+        });
+
+        require(['productImage'], function(productImage) {
+            productImage = new productImage();
+            productImage.init(0);
+        });
+
+        if (productPrdInfo.hasVideo) {
+            require(['productVideo'], function(productVideo) {
+                productVideo.init();
+            });
+        }
+
+        require(['delivery'], function(delivery) {
+            delivery.init();
+            if (productPrdInfo.isMart) {
+                require(['//v.011st.com/latest/pc-mart.popup.js'], function (deliveryPopup) {
+                    window.mart.event.on('closeShippingPopup', function (params) {  // 팝업을 닫으면서 closeShippingPopup 이벤트를 처리하는 함수에 deliveryType을 전달
+                        // 예) 팝업이 닫히면 페이지를 리로드하겠다.
+                        var replacesUrl = location.protocol + "//" + location.host + location.pathname;
+                        location.reload(replacesUrl);
+                    });
+                });
+            }
+        });
+
+        require(['store'], function(store) {
+            store.init();
+        });
+
+        require(['productCoupon'], function(productCoupon) {
+            productCoupon.init();
+        });
+
+        require(['powerLink'], function(powerLink) {
+            if (productEtcInfo.showPowerLink === 'true') {
+                powerLink.init();
+            }
+        });
+
+        require([
+            'myCupnInfo',
+            'inCart'
+        ], function (myCupnInfo, inCart) {
+
+            require([
+                'orderInfo'
+            ], function (orderInfo) {
+                require([
+                        'productLayout',
+                        'setItem',
+                        'customOptionBot',
+                        'customAddPrdBot',
+                        'stdPrdOptionBot',
+                        'customBuyInventory'
+                    ],
+                    function (ProductLayout, SetItem, CustomOptionBot, CustomAddPrdBot, stdPrdOptionBot, CustomBuyInventory) {
+                        var productLayout, setItem, customOption2,
+                            customAddPrd2, customBuyInventory;
+
+                        // 구매 상품 관련 스크립트 호출
+                        setItem = new SetItem();
+                        setItem.init();
+
+                        // 상품 상세 Layerout 관련 스크립트 호출
+                        productLayout = new ProductLayout();
+                        productLayout.init();
+
+                        // 옵션 레이어 관련 스크립트 호출
+                        if(productPrdInfo.isStandardPrd) {
+                            customOption2 = new stdPrdOptionBot('#ui_stdPrd2', 'bottom');
+                            customOption2.init();
+                        } else {
+                            customOption2 = new CustomOptionBot('#ui_option2', 'bottom');
+                            customOption2.init();
+                        }
+
+                        customAddPrd2 = new CustomAddPrdBot('#ui_addPrd2', 'bottom');
+                        customAddPrd2.init();
+
+                        customBuyInventory = new CustomBuyInventory();
+                        customBuyInventory.init();
+
+                        try{
+                            require([
+                                'template',
+                                'slider',
+                                'tooltip',
+                                'productCommon'
+                            ] , function(Template, Slider, ToolTip){
+                                // 공통function
+
+
+                                //Handlebar Template
+                                handlebars.registerHelper('toJson', function(v1) {
+                                    return JSON.stringify(v1);
+                                });
+
+                                if(productPrdInfo.isStandardPrd) {
+                                    require(['productStdView'], function(productStandardView) {
+                                        productStandardView.init();
+                                    });
+                                }
+                            });
+
+                        } catch (e) {
+                            alert(e.message);
+                        }
+                    });
+            });
+        });
+        require(['recommend'], function (recommend) {
+            recommend.init();
+        });
+
+        require(['sellerTabInfo'], function (sellerTabInfo) {
+            sellerTabInfo.init();
+        });
+
+        require(['productReturn'], function (productReturn) {
+            productReturn.init();
+        });
+
+        require(['ocr'], function (ocr) {
+            ocr.init();
+        });
+    });
+
+});

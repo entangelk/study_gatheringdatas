@@ -1,0 +1,184 @@
+/**
+ * @method: inCart Js event
+ */
+(function (root, factory) {
+    'use strict';
+    if (typeof define === 'function' && define.amd) {
+        define([
+            'jquery'
+        ], factory);
+    } else {
+        root.inCart = factory(
+            root.jQuery
+        );
+    }
+}(window || this, function ($) {
+    'use strict';
+    var prdVar = productPrdInfo;
+    var optVar = productOptInfo;
+
+    var inCart = {
+        showInCart: function (msg) {
+            var _this = this;
+            if ($('.c_product_item_list_style5 li a').size() > 1) {
+                $('.l_product_buy_cart_wrap').css('display', 'block').show();
+                _this.applyCartMsg($('#recommend_cart_add_msg'), msg);
+                var show = setTimeout(function () {
+                    $('.l_product_buy_cart_wrap').attr('aria-hidden', false).addClass('active')
+                }, 20);
+                return false;
+            }
+
+            return $.ajax({
+                url: "/products/view/pc/in-cart/"+prdVar.prdNo,
+                data: {
+                    'supported': true
+                },
+                dataType: 'text',
+                contentType: 'text/html; charset=UTF-8'
+            }).done(function (data) {
+                if ("" === data.replace(/\s/gi, '')) {
+                    $("#ar-dialogCart").remove();
+                    $('#ar-layerCart').addClass('active');
+                    _this.removeOrderDraw();
+                    _this.applyCartMsg($('#cart_add_msg'), msg);
+                } else {
+                    $("#recommend_inCart").replaceWith(data);
+                    if ($('.l_product_buy_cart_wrap').css('display', 'none')) {
+                        $('.l_product_buy_cart_wrap').css('display', 'block').show();
+                        var show = setTimeout(function () {
+                            $('.l_product_buy_cart_wrap').attr('aria-hidden', false).addClass('active')
+                        }, 20);
+                    } else {
+                        $('.l_product_buy_cart_wrap').hide();
+                    }
+                    _this.bindCartEvent();
+                    _this.applyCartMsg($('#recommend_cart_add_msg'), msg);
+                }
+            }
+                .bind(this))
+                .fail(function () {
+                    $("#ar-dialogCart").remove();
+                    $('#ar-layerCart').addClass('active');
+                    _this.removeOrderDraw();
+                    _this.applyCartMsg($('#cart_add_msg'), msg);
+                })
+                ;
+        },
+
+        bindCartEvent: function () {
+            var _this = this;
+            $('.c_btn_favorite').click(function () {
+                if (!funcCheckIsLogin()) {
+                    openLogin(2, 'frmMain');
+                    return;
+                }
+                var $target = $(this);
+                var prdNo = $(this).val();
+                if ($(this).hasClass('active')) {
+                    _this.removeLikeInCart(prdNo, $target);
+                } else {
+                    _this.addLikeInCart(prdNo, $target);
+                }
+            });
+
+            $('.c_product_cart_result .c_product_btn_delete2, .l_product_buy_cart_wrap').click(function (e) {
+                if (e.target.className.includes('l_product_buy_cart_wrap')
+                    || e.target.className.includes('c_product_btn_delete2')) {
+                    $('.l_product_buy_cart_wrap').attr('aria-hidden', true).removeClass('active').hide();
+                    _this.removeOrderDraw();
+                }
+            });
+        },
+        //좋아요
+        addLikeInCart: function (prdNo, $target) {
+            if (!funcCheckIsLogin()) {
+                openLogin(5, "afterLikeSrchLogin");
+                return;
+            }
+
+            $.ajax({
+                url: '/products/' + prdNo + '/like',
+                type: 'POST'
+            })
+                .success(function (data) {
+                    if (data.resultCode == 'login') {
+                        openLogin(5, 'afterLikeSrchLogin');
+                        return;
+                    } else if (data.resultCode == 'alread') {
+                        alert("이미 찜 한 상품입니다.");
+                    } else if (data.resultCode == 'success') {
+                        $target.toggleClass('active');
+                    } else {
+                        alert("다시 시도해 주세요.");
+                    }
+                }.bind(this))
+                .error(function () {
+                    console.log(arguments);
+                    alert('서버통신 중 에러가 발생되었습니다.');
+                }.bind(this));
+        },
+
+        //좋아요 취소
+        removeLikeInCart: function (prdNo, $target) {
+            if (!funcCheckIsLogin()) {
+                openLogin(5, "afterLikeSrchLogin");
+                return;
+            }
+
+            $.ajax({
+                url: '/products/' + prdNo + '/delete/like',
+                type: 'POST',
+            })
+                .success(function (data) {
+                    if (data.resultCode == 'success') {
+                        $target.toggleClass('active');
+                    }
+                }.bind(this))
+                .error(function () {
+                    console.log(arguments);
+                    alert('서버통신 중 에러가 발생되었습니다.');
+                }.bind(this));
+        },
+
+        removeOrderDraw: function () {
+            if (optVar.isNotOptPrd
+                && optVar.orderOptArr[0].amount != optVar.defaultOptionQty) {
+                $('div.option_amount').find('input[data-prdstckno=' + optVar.totPrdStckNo + ']')
+                    .val(optVar.defaultOptionQty);
+                $('div.option_amount > input').trigger('change');
+            }
+
+            $('.option_bottom').find('li .c_product_btn_delete').each(function() {
+                $(this).click();
+            })
+
+            $('#buyList').find('.c_product_dropdown_style1').each(function() {
+                $(this).removeClass('active')
+            });
+
+            if (prdVar.isStandardPrd) {
+                $('.option_item_list > li:nth-child(1)').trigger('click');
+            } else {
+                $('#buyList').children().first().children().addClass('active');
+            }
+
+            if ($("input[name='freePackageCode']").val() != undefined
+                && $("input[name='freePackageCode']").is(':checked')) {
+                $("input[name='freePackageCode']").removeAttr('checked');
+                document.forms["frmMain"].elements["freePackageType"].value = "01";
+            }
+        },
+
+        applyCartMsg: function (target, msg) {
+            $(target).hide();
+
+            if (msg != null && msg != undefined) {
+                $(target).text(msg);
+                $(target).show();
+            }
+        }
+    };
+
+    return inCart;
+}));

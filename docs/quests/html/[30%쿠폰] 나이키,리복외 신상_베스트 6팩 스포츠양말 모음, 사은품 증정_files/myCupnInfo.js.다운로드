@@ -1,0 +1,284 @@
+/**
+ * @method: myCupnInfo
+ * @dependency: requireJS, jQuery
+ */
+(function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define([
+            'jquery'
+            // ,'prdVar'
+        ], factory);
+    } else {
+        root.myCupnInfo = factory(
+            root.jQuery
+            // ,root.prdVar
+        );
+    }
+}(window || this, function ($) {
+
+
+    var prdVar = productPrdInfo;
+    var optVar = productOptInfo;
+
+    var myCupnInfo = {
+
+        // 템플릿 적용 컨텐츠 : 상단과 하단 두군데에 있다.
+        $templateContent: $('.option_mini'),
+        // isSetDpCupnCalcPrc : false,
+
+        init: function () {
+        },
+
+        isPrdFnMyCupn: function () {
+            return !prdVar.isRsvSel
+                && !prdVar.isGroupBuyPrd;
+        },
+
+
+        getMyCupnInfo: function () {
+
+            var _this = this;
+
+            var callBack = function (data) {
+                var myCouponPrices = data.result;
+
+                if (typeof myCouponPrices !== 'object' && myCouponPrices.length > 0) {
+                    return;
+                }
+
+                optVar.lastPrc = myCouponPrices
+                    .map(function (myCouponPrice) {return myCouponPrice.TOTAL_AMT})
+                    .reduce(function (p,c) {return p+c});
+
+                if (optVar.orderOptArr.length == myCouponPrices.length) {
+                    for (var i = 0; i < optVar.orderOptArr.length; i++) {
+                        optVar.orderOptArr[i].sumDscPrc = myCouponPrices[i].SUM_DSC_PRC;
+                        optVar.orderOptArr[i].memberSumDscPrc = myCouponPrices[i].MEMBER_SUM_DSC_PRC;
+                        optVar.orderOptArr[i].bonusCupnIssNo = myCouponPrices[i].BONUS_ISS_CUPN_NO;
+                        optVar.orderOptArr[i].plusDscAmt = myCouponPrices[i].PLUS_DSC_AMT;
+                        /* 선택할인쿠폰을 적용하지 않는 경우
+                           => 듀얼 프라이스 상품 && 멤버십 대표 && 멤버십 MO 즉시가 존재하는 경우 */
+                        if (!(prdVar.showDualPrice && prdVar.isUniverseFamilyOwner && optVar.orderOptArr[i].memberSumDscPrc > 0)) {
+                            optVar.orderOptArr[i].choiceCupnIssNo = myCouponPrices[i].ADD_ISS_CUPN_NO;
+                        }
+                    }
+                }
+
+                _this.setDpCupnCalcPrc();
+            }
+
+            if (this.isPrdFnMyCupn()) {
+                if (optVar.orderOptArr.length == 0
+                    || optVar.orderOptArr[0].prdStckNo == "0") {
+                    _this.setDpCupnCalcPrc();
+                    return;
+                }
+
+                var data = {
+                    channel : 'PC',
+                    issueCupnExptCd : prdVar.issueCupnExptCd,
+                    couponPriceParameters : []
+                };
+
+                for (var i = 0; i < optVar.orderOptArr.length; i++) {
+                    var optionAddPrc = optVar.orderOptArr[i].originalAddPrc;
+                    if (optVar.orderOptArr[i].calcOptObj) {
+                        optionAddPrc = Number(optionAddPrc) + Number(optVar.orderOptArr[i].calcOptObj.addPrc || 0);
+                    }
+
+                    data.couponPriceParameters.push({
+                        "stockNo" : optVar.orderOptArr[i].prdStckNo,
+                        "soCupnAmt" : optVar.orderOptArr[i].soDscAmt,
+                        "moCupnAmt" : optVar.orderOptArr[i].moDscAmt,
+                        "memberMoCupnAmt" : optVar.orderOptArr[i].memberMoDscAmt,
+                        "selPrc" : optVar.orderOptArr[i].selPrc,
+                        "optionAddPrc" : optionAddPrc,
+                        "orderQty" : Number(optVar.orderOptArr[i].amount)
+                    });
+                }
+
+                $.ajax({
+                    url: "/products/v1/om/my-coupon-price",
+                    type: 'POST',
+                    cache: false,
+                    contentType: 'application/json; charset=UTF-8',
+                    data: JSON.stringify(data)
+                }).done(callBack);
+            }
+        },
+
+        isHasSizeOption: function (obj) {
+            if (typeof obj != "object") return false;
+            var optionSize = (obj).optionSize;
+            if (typeof optionSize != "object") return false;
+            // if(!Array.isArray(optionSize)) return false;
+            if (optionSize.length != 2) return false;
+            if (typeof optionSize[0] == "number" && optionSize[0] > 0
+                && typeof optionSize[1] == "number" && optionSize[1] > 0) return true;
+            return false;
+        },
+
+        setDpCupnCalcPrc: function () {
+            var _this = this;
+            try {
+                var tmpOptPrc = 0;
+                var tmpMemberOptPrc = 0;
+                var addCompPrc = 0;
+                var totalOptPrc = 0;
+                var totalMemberOptPrc = 0;
+                var totalDscPrc = 0;
+                var totalMemberDscPrc = 0;
+                var totalPlusDscPrc = 0;
+                var totalCupnCnt = 0;	// 적용된 쿠폰 갯수
+                for (var i = 0, size = optVar.orderOptArr.length; i < size; i++) {
+                    if (prdVar.isStandardPrd) {
+                        tmpOptPrc = 0;
+                        var applyCoupon = Number(optVar.orderOptArr[i].sumDscPrc) > 0;
+                        var addPrc = Number(optVar.orderOptArr[i].originalAddPrc);
+                        tmpOptPrc = addPrc + Number(optVar.orderOptArr[i].selPrc);
+                        if (applyCoupon) {
+                            totalCupnCnt++;
+                        }
+                    } else {
+                        tmpOptPrc = 0;
+                        tmpOptPrc = Number(optVar.orderOptArr[i].originalAddPrc) + Number(prdVar.selPrc);
+
+                        // 계산형 옵션명, 옴션가 추가
+                        var prdCalcOptPrc = 0;
+                        if (_this.isHasSizeOption(optVar.orderOptArr[i].calcOptObj)) {
+                            prdCalcOptPrc = optVar.orderOptArr[i].calcOptObj.addPrc;
+                            tmpOptPrc += Number(prdCalcOptPrc);
+                        }
+                    }
+                    tmpMemberOptPrc = tmpOptPrc;
+                    tmpOptPrc = Number(Number(optVar.orderOptArr[i].amount) * tmpOptPrc) - Number(optVar.orderOptArr[i].sumDscPrc);
+                    tmpMemberOptPrc = Number(Number(optVar.orderOptArr[i].amount) * tmpMemberOptPrc) - Number(optVar.orderOptArr[i].memberSumDscPrc);
+                    totalOptPrc = Number(totalOptPrc) + Number(tmpOptPrc);
+                    totalMemberOptPrc = Number(totalMemberOptPrc) + Number(tmpMemberOptPrc);
+                    totalDscPrc = totalDscPrc + Number(optVar.orderOptArr[i].sumDscPrc);
+                    totalMemberDscPrc = totalMemberDscPrc + Number(optVar.orderOptArr[i].memberSumDscPrc);
+                    totalPlusDscPrc += Number(optVar.orderOptArr[i].plusDscAmt);
+
+                    _this.$templateContent.find('[data-prdstckno=' + optVar.orderOptArr[i].prdStckNo + ']').find('.value').each(function () {
+                        $(this).html(_this.commaFormat(tmpOptPrc));
+                    });
+                    // 하단 옵션적용
+                    $('.option_bottom').find('[data-prdstckno=' + optVar.orderOptArr[i].prdStckNo + ']').find('.value').each(function () {
+                        $(this).html(_this.commaFormat(tmpOptPrc));
+                    });
+
+                }
+
+                var cpnArea = $('#benefit_cpn_area');
+                var cpnMembershipArea = $('#benefit_cpn_membership_area');
+
+                this.setCupnTextArea(cpnMembershipArea, totalMemberDscPrc, totalCupnCnt, totalPlusDscPrc);
+                this.setCupnTextArea(cpnArea, totalDscPrc, totalCupnCnt, totalPlusDscPrc);
+
+                if ($('input:radio[name="radio_price_membership"]').is(":checked") === true) {
+                    cpnArea.hide();
+                    cpnMembershipArea.show();
+                } else {
+                    cpnArea.show();
+                    cpnMembershipArea.hide();
+                }
+
+                // 하단 쿠폰 노출 영역 추가
+                // 하단 쿠폰 노출 영역 추가 끝
+
+                // 추가상품
+                for (var i = 0, size = optVar.orderAddPrdArr.length; i < size; i++) {
+                    addCompPrc += Number(optVar.orderAddPrdArr[i].addPrc);
+                }
+
+                // 추천상품
+                for (var i = 0, size = optVar.orderRecmPrdArr.length; i < size; i++) {
+                    addCompPrc += Number(optVar.orderRecmPrdArr[i].addPrc);
+                }
+
+                jQuery("[name=totalPriceArea]").each(function () {
+                    jQuery(this).html(_this.commaFormat(Number(totalOptPrc) + Number(addCompPrc) - Number(totalPlusDscPrc)));
+                });
+
+                jQuery("[name=totalMembershipPriceArea]").each(function () {
+                    jQuery(this).html(_this.commaFormat(Number(totalMemberOptPrc) + Number(addCompPrc) - Number(totalPlusDscPrc)));
+                });
+
+                if (prdVar.showDualPrice) {
+                    $("div.coupon_apply").hide();
+                    $('#normalPriceArea').hide();
+                    $('#dualPriceArea').show();
+
+                    if (prdVar.isUniverseFamilyOwner) {
+                        var radioMemPrice = $('input:radio[name="radio_price_membership"]');
+                        radioMemPrice.prop("checked", true);
+                        radioMemPrice.trigger("click");
+                    } else {
+                        var radioNonMemPrice = $('input:radio[name="radio_price_non_membership"]');
+                        radioNonMemPrice.prop("checked", true);
+                        radioNonMemPrice.trigger("click");
+                    }
+                } else {
+                    $('#normalPriceArea').show();
+                    $('#dualPriceArea').hide();
+                }
+
+                $('.l_product_buy_list').css('bottom', $('.l_product_buy_list').next().outerHeight() - 1);
+            } catch (e) {
+            }
+        },
+
+        setCupnTextArea: function (_targetBot, totalDscPrc, totalCupnCnt, totalPlusDscPrc) {
+            if (_targetBot) {
+                var botBenefitTxt = '';
+
+                if (prdVar.isStandardPrd) {
+                    if (totalCupnCnt == 0) {
+                        botBenefitTxt = '';
+                        if(productCouponDownInfo.dupCupnIssNo > 0 || productCouponDownInfo.dscCupnIssNo > 0) {
+                            botBenefitTxt = '할인쿠폰 적용가능';
+                        }
+                    } else {
+                        botBenefitTxt = '<span class="text_num">' + this.commaFormat(totalDscPrc) + '</span>원 쿠폰 자동적용';
+                    }
+                } else {
+                    if (totalDscPrc > 0) {
+                        botBenefitTxt = '<span class="text_num">' + this.commaFormat(totalDscPrc) + '</span>원 쿠폰 자동적용';
+                    }
+                }
+                if (totalPlusDscPrc > 0) {
+                    if (botBenefitTxt == '') botBenefitTxt += ' / ';
+                    botBenefitTxt += '<span class="text_num">' + this.commaFormat(totalDscPrc) + '</span>원 추가';
+                }
+
+                if (botBenefitTxt != '') {
+                    _targetBot.html(botBenefitTxt);
+                    _targetBot.removeClass('benefit_default');
+                    _targetBot.addClass('benefit_price');
+                } else {
+                    _targetBot.html('적용 가능한 쿠폰 없음');
+                    _targetBot.removeClass('benefit_price');
+                    _targetBot.addClass('benefit_default');
+                }
+            }
+        },
+
+        commaFormat: function (num) {
+            if (num === 0) {
+                return 0;
+            }
+
+            var reg = /(^[+-]?\d+)(\d{3})/,
+                n = (num + '');
+
+            while (reg.test(n)) {
+                n = n.replace(reg, '$1' + ',' + '$2');
+            }
+
+            return n;
+        }
+
+    };
+
+    return myCupnInfo;
+}));

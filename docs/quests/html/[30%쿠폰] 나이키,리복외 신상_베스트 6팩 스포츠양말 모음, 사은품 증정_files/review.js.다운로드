@@ -1,0 +1,1166 @@
+(function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define([
+            'jquery',
+            'prdVar'
+        ], factory);
+    } else {
+        root.productPrice = factory(
+            root.jQuery,
+            root.prdVar
+        );
+    }
+}(window || this, function ($, prdVar) {
+    'use strict';
+    var photo_review_list_page = 1;
+
+    var review_list_page = 1;
+    var review_list_size = 20;
+    var review_list_sort_type = '01';
+    var review_list_mediaReviewType = [];
+    var review_list_pnt_val = [];
+    var review_list_options = "";
+
+    var review_detail_page = 1;
+    var review_detail_size = 20;
+    var browse = navigator.userAgent.toLowerCase();
+    var explorer = (navigator.appName == 'Netscape' && browse.indexOf('trident') != -1) || (browse.indexOf("msie") != -1);
+
+    var explorer9 = false;
+    var explorer9ReturnMessage = 'IE 9 에서는 이용 하실수 없습니다\n최신버전으로 Update 후 이용 가능 합니다';
+    var keyControlStats = 'off';
+    var login_targetUrl = "//www.11st.co.kr/products/";
+    var review = {
+
+        sendMoreViewLog: function (logTag) {
+            var isIE = (navigator.appName == 'Netscape' && browse.indexOf('trident') != -1) || (browse.indexOf("msie") != -1);
+            $('.review_list_element').each(function (index, elem) {
+                var clickedContMapNo = $(logTag).attr('data-contMapNo');
+                var listContMapNo = $(elem).attr('data-contMapNo');
+                if (listContMapNo === clickedContMapNo) {
+                    $(logTag).attr('data-log-actionid-area', 'review_detail');
+                    $(logTag).attr('data-log-actionid-label', 'thumbnail_on_review_more');
+                    $(logTag).attr('data-log-body', '{"current_product_no":"' + $(logTag).attr('data-productNo') + '", "rank_no":"' + (index + 1) + '"}');
+                }
+            });
+        },
+        sendThumbnailClickLog: function (logTag) {
+            $('.review_list_element').each(function (index, elem) {
+                var clickedContMapNo = $(logTag).attr('data-contMapNo');
+                var listContMapNo = $(elem).attr('data-contMapNo');
+                if (listContMapNo === clickedContMapNo) {
+                    // $(logTag).attr('data-log-actionid-area', 'review_detail');
+                    // $(logTag).attr('data-log-actionid-label', 'thumbnail_on_review_summary');
+                    $(logTag).attr('data-log-body', '{"current_product_no":"' + $(logTag).attr('data-productNo') + '", "rank_no":"' + (index + 1) + '"}');
+                }
+            });
+        },
+
+
+        sendClickLog: function (element) {
+            var isAlreadySended = $(element).attr('data-sended') === 'Y';
+            if (!isAlreadySended) {
+                $(element).attr('data-sended', 'Y');
+                rakeLog.sendRakeLog(element, 'click');
+            }
+        },
+        sendPostMessage: function (reviewDetail, htmls, targetArea, append) {
+            if (reviewDetail) {
+                append = !!append;
+                window.parent.postMessage({
+                    targetArea: targetArea,
+                    htmls: htmls,
+                    append: append
+                }, "*");
+            } else {
+                var heightReview = $('#review-summary-area').height() + $('#review-list-area').height() + 50;
+
+                var isIE9 = (navigator.userAgent.toLowerCase().indexOf("msie 9") !== -1);
+
+                if (isIE9) {
+                    var params = {
+                        "frameHeight": heightReview
+                    };
+                    window.parent.postMessage(JSON.stringify(params), "*");
+                } else {
+                    window.parent.postMessage({
+                        frameHeight: heightReview
+                    }, "*");
+                }
+
+            }
+        },
+
+        sendEventMessage: function (functionName, params) {
+            var isIE9 = (navigator.userAgent.toLowerCase().indexOf("msie 9") !== -1);
+            if (!isIE9) {
+                window.parent.postMessage({
+                    functionName: functionName,
+                    params: params
+                }, "*");
+            }
+        },
+
+        sendParamsMessage: function (params, value) {
+            var isIE9 = (navigator.userAgent.toLowerCase().indexOf("msie 9") !== -1);
+            if (!isIE9) {
+                window.parent.postMessage({
+                    params: params,
+                    value: value
+                }, "*");
+            }
+        },
+
+        isPhoneShop: function () {
+            return document.referrer.indexOf('phone.11st.co.kr') > -1;
+        },
+
+        getPhotoReviewDetail: function (contentsMappingNo, contentsImageNo) {
+            if (contentsMappingNo === '' || contentsMappingNo === null) {
+                return;
+            }
+
+            if (!review.checkIE()) {
+                review.sendEventMessage('inLoading');
+            }
+            var productNo = prdVar.prdNo;
+            review.sendParamsMessage('selector_contentsMappingNo', contentsMappingNo);
+            var detailUrl;
+            if (review.checkIE() || review.isPhoneShop()) {
+                detailUrl = "/products/" + productNo + "/reviews/" + contentsMappingNo + "/photo-ie?type=gallery&selector=" + contentsImageNo;
+            } else {
+                detailUrl = "/products/" + productNo + "/reviews/" + contentsMappingNo + "/photo?type=gallery&selector=" + contentsImageNo;
+            }
+            detailUrl += "&pageNo=" + review_detail_page;
+
+            if (review.checkIE() || review.isPhoneShop()) {
+                review.getPhotoReviewDetailIE(detailUrl);
+            } else {
+                review.getPhotoReviewDetailChrome(detailUrl);
+            }
+        },
+
+        getPhotoReviewDetailIE: function (reviewDetailUrl) {
+            window.open(reviewDetailUrl,
+                "_popup", "width=" + 960 + "px,height=" + 647 + "px,scrollbars=no,status=no,location=no");
+        },
+
+        getPhotoReviewDetailChrome: function (reviewDetailUrl) {
+            return $.ajax({
+                url: reviewDetailUrl,
+                dataType: 'text',
+                contentType: 'text/html; charset=euc-kr'
+            }).success(function (data) {
+                if (data !== '') {
+                    review.sendPostMessage(true, data, 'photo-review-detail');
+                } else {
+                    review.sendEventMessage('errorProcessParent');
+                }
+            }).then(function () {
+                // photoReviewDetailEvent
+                review.sendEventMessage('photoReviewDetailEvent');
+            }).then(function () {
+                // photoReview ThumbNail List Event
+                review.sendEventMessage('photoReviewThumbNailListEvent');
+            }).then(function () {
+                review.applyShadow();
+                review.sendPostMessage();
+                review.addPhotoReviewVideoPlay();
+                review.addKkuk();
+            }).fail(function () {
+                review.sendEventMessage('errorProcessParent');
+            });
+        },
+
+        addPhotoReviewVideoPlay: function () {
+            // add photoReviewVideoPlay
+            review.sendEventMessage('addPhotoReviewVideoPlay');
+        },
+
+        getReviewDetail: function (contentsMappingNo, contentsImageNo) {
+            if (contentsMappingNo === '' || contentsMappingNo === null) {
+                return;
+            }
+            if (contentsImageNo === '' || contentsImageNo === null || contentsImageNo === undefined) {
+                contentsImageNo = 0;
+            }
+
+            review.sendParamsMessage('selector_contentsMappingNo', contentsMappingNo);
+
+            if (review.checkIE() || review.isPhoneShop()) {
+                var detailUrl = "//www.11st.co.kr/products/"
+                    + prdVar.prdNo + "/reviews/" + contentsMappingNo + "/detail-ie?selector=" + contentsImageNo;
+
+                review.getReviewDetailIE(detailUrl);
+            } else {
+                review.getReviewDetailChrome(contentsMappingNo, contentsImageNo);
+            }
+        },
+
+        getReviewDetailChrome: function (contentsMappingNo, contentsImageNo) {
+            $.ajax({
+                url: "/products/" + prdVar.prdNo + "/reviews/" + contentsMappingNo + "/detail",
+                type: 'POST',
+                method: 'POST',
+                data: review.getReviewDetailData(contentsMappingNo, contentsImageNo),
+                dataType: 'text',
+                contentType: 'application/json; charset=UTF-8'
+            }).success(function (data, textstatus) {
+                if (data !== '') {
+                    review.sendPostMessage(true, data, 'review-list-detail-div');
+                } else {
+                    review.sendEventMessage('errorProcessParent');
+                }
+            }).then(function () {
+                if (!review.checkIE()) {
+                    review.sendEventMessage('reviewDetailPopupEvent');
+                    review.setVideoPlay();
+                }
+            }).then(function () {
+                review.applyShadow();
+                review.sendEventMessage('reviewDetailPopupThumbnailEvent');
+                review.sendPostMessage();
+                review.addReviewDetailVideoPlay();
+                review.addKkuk();
+            }).fail(function () {
+                review.sendEventMessage('errorProcessParent');
+            });
+        },
+
+        getReviewDetailIE: function (detailUrl) {
+            window.open(detailUrl,
+                "_popup", "width=" + 960 + "px,height=" + 647 + "px,scrollbars=no,status=no,location=no");
+        },
+
+        addReviewDetailVideoPlay: function () {
+            // addReviewDetailVideoPlay
+            review.sendEventMessage('addReviewDetailVideoPlay');
+        },
+
+        getReviewSummary: function () {
+            var productNo = prdVar.prdNo;
+            if (explorer === '' || explorer === undefined) {
+                explorer = false;
+            }
+            return $.ajax({
+                url: "/products/" + productNo + "/review-summary?explorer=" + explorer,
+                dataType: 'text',
+                contentType: 'text/html; charset=euc-kr'
+            }).success(function (data) {
+                if (data !== '' && data !== null) {
+                    $("#review-summary-area").html(data);
+                    review.sendPostMessage();
+                    review.sendParamsMessage('photo_review_gallery_count', $("#photo-review-gallery-count").val());
+                }
+            }).then(function () {
+                review.sendEventMessage('setSummaryVideoSetting');
+                if ($('#summaryVideoBtn').length > 0) {
+                    rakeLog.sendRakeLog(document.getElementById('summaryVideoBtn'), 'impression');
+                }
+
+                $('.summaryPhotoReviewBtn').on('click', function (e) {
+                    if (review.alertIE9()) {
+                        return;
+                    }
+                    review.sendEventMessage('stopVideo');
+                    $("#photo-review-list-history-back").val(false);
+                    $('.review-photo-list-area').removeClass('active');
+                    $(this).parents().addClass('active');
+                    review.getPhotoReviewDetail($(this).val(), $(this).data('imgno'));
+                    review.sendEventMessage('addSummaryVideoEvent');
+                    review.sendEventMessage('reviewSummaryPhotoReviewBtnEvent');
+                });
+
+                $('#allPhotoReviewList').on('click', function (e) {
+                    if (review.alertIE9()) {
+                        return;
+                    }
+                    var contMapNo = $(this).data('contmapno');
+                    if (contMapNo !== '' || contMapNo !== undefined) {
+                        review.sendParamsMessage('selector_contentsMappingNo', $(this).data('contmapno'));
+                    }
+                    if (!review.checkIE()) {
+                        review.sendEventMessage('inLoading');
+                    }
+                    photo_review_list_page = 1;
+                    review.sendParamsMessage('photo_review_list_page', photo_review_list_page);
+                    review.sendEventMessage('addSummaryVideoEvent');
+                    review.sendEventMessage('getPhotoReviewListWrap', false, false);
+                });
+
+            }).then(function () {
+                var videoBox = $('.summary-video-box'),
+                    videoplayer = videoBox.find('video'),
+                    videoEle = videoplayer[0];
+                review.addVideoData(videoBox);
+                if (videoEle !== undefined) {
+                    review.sendEventMessage("reviewSummaryVideo");
+                    videoplayer.attr('controls', 'controls');
+                    videoplayer.click(function () {
+                        if (keyControlStats === 'off') {
+                            review.bodyClickCheck();
+                        }
+                    });
+
+                    review.timecontrol();
+                }
+            }).fail(function (error) {
+                console.error(error);
+            });
+        },
+
+        bodyClickCheck: function (keyControlStats) {
+            $(document).click(function (e) {
+                if ($(e.target).is('video, .video11box .btn_play, .video11box .ico_movreview')) {
+                    keyControlStats = 'on';
+                } else {
+                    keyControlStats = 'off';
+                }
+            });
+        },
+
+        timecontrol: function () {
+            $(document).keydown(function (e) {
+                if (e.keyCode === '39' && keyControlStats === 'on') {
+                    var nowTime = parseInt(videoEle.currentTime);
+                    videoEle.currentTime = nowTime + 10;
+                } else if (e.keyCode === '37' && keyControlStats === 'on') {
+                    var nowTime = parseInt(videoEle.currentTime);
+                    videoEle.currentTime = nowTime - 10;
+                }
+            });
+        },
+
+        getReviewList: function () {
+            return $.ajax({
+                url: "/products/" + prdVar.prdNo + "/review-list",
+                type: 'GET',
+                method: 'GET',
+                data: review.getReviewListData(),
+                dataType: 'text',
+                // contentType: 'application/json; charset=UTF-8'
+            }).success(function (data) {
+                if (data !== '') {
+                    if (review_list_page > 1) {
+                        $("#review-list-page-area").append(data);
+                    } else {
+                        $("#review-list-area").html(data);
+                    }
+                    review_list_page++;
+                }
+            }).then(function () {
+                review.sendPostMessage();
+                review.addDropDown();
+                review.selectStarScore();
+                review.addKkuk();
+                review.addReviewListEvent();
+                review.sendPostMessage();
+            }).fail(function (error) {
+                console.error(error);
+            });
+        },
+
+        getPagedReviewList: function () {
+            return $.ajax({
+                url: "/products/" + prdVar.prdNo + "/review-list",
+                type: 'GET',
+                method: 'GET',
+                data: review.getPagedReviewListData(),
+                dataType: 'text',
+                // contentType: 'application/json; charset=UTF-8'
+            }).success(function (data) {
+                if (data !== '') {
+                    if (review_list_page > 1) {
+                        $("#review-list-page-area").append(data);
+                    } else {
+                        $('#review-list-page-area').html(data);
+                    }
+                    review_list_page++;
+                    review.sendParamsMessage('review_list_page', review_list_page);
+                    review.sendPostMessage();
+                }
+            }).then(function () {
+                review.addKkuk();
+                review.sendPostMessage();
+                review.addReviewPagedListEvent();
+            }).fail(function (error) {
+                console.error(error);
+            });
+        },
+
+        setVideoPlay: function () {
+            var videoBox = $('.video-box'),
+                videoplayer = videoBox.find('video'),
+                videoEle = videoplayer[0],
+                keyControlStats = 'off';
+
+            if (videoEle === undefined) {
+                return;
+            }
+
+            $('.movie-play').on('click', function () {
+                if (!document.createElement('video').canPlayType) {
+                    return false;
+                }
+                videoplayer.attr('controls', 'controls');
+                videoEle.play();
+                keyControlStats = 'on';
+                timecontrol();
+
+                $(this).hide();
+                $(document).click(bodyClickCheck);
+            });
+
+            $('#review-summary-btn-replay').on('click', function () {
+                videoplayer.attr('controls', 'controls');
+                videoEle.pause();
+                videoEle.currentTime = 0;
+                videoEle.play();
+                keyControlStats = 'on';
+                timecontrol();
+                $(this).hide();
+                $(document).click(bodyClickCheck);
+            });
+
+            videoplayer.click(function () {
+                if (keyControlStats == 'off') {
+                    $(document).click(bodyClickCheck);
+                }
+            });
+
+            function timecontrol() {
+                $(document).keydown(function (e) {
+                    if (e.keyCode == '39' && keyControlStats == 'on') {
+                        var nowTime = parseInt(videoEle.currentTime);
+                        videoEle.currentTime = nowTime + 10;
+                    } else if (e.keyCode == '37' && keyControlStats == 'on') {
+                        var nowTime = parseInt(videoEle.currentTime);
+                        videoEle.currentTime = nowTime - 10;
+                    }
+                });
+            }
+
+            function bodyClickCheck(e) {
+                if ($(e.target).is('video, .video11box .btn_play, .video11box .ico_movreview')) {
+                    keyControlStats = 'on';
+                } else {
+                    keyControlStats = 'off';
+                    $(document).unbind('click', bodyClickCheck);
+                }
+            }
+        },
+
+        addVideoData: function (videoDivData) {
+            var videoBox = videoDivData,
+                videoplayer = videoBox.find('video'),
+                videoEle = videoplayer[0],
+                keyControlStats = 'off';
+
+            if (videoEle === undefined) {
+                return;
+            }
+
+            $('.movie-play').on('click', function () {
+                if (!document.createElement('video').canPlayType) {
+                    return false;
+                }
+                videoplayer.attr('controls', 'controls');
+                videoEle.play();
+                keyControlStats = 'on';
+                timecontrol();
+                $(this).hide();
+                $(document).click(bodyClickCheck);
+            });
+
+            $('#review-summary-btn-replay').on('click', function () {
+                videoplayer.attr('controls', 'controls');
+                videoEle.pause();
+                videoEle.currentTime = 0;
+                videoEle.play();
+                keyControlStats = 'on';
+                timecontrol();
+                $(this).attr('data-log-actionid-area', '');
+                $(this).attr('data-log-actionid-label', '');
+                $(this).attr('data-log-body', '');
+                $(this).hide();
+                $(document).click(bodyClickCheck);
+            });
+
+            videoplayer.click(function () {
+                if (keyControlStats == 'off') {
+                    $(document).click(bodyClickCheck);
+                }
+            });
+
+            function timecontrol() {
+                $(document).keydown(function (e) {
+                    if (e.keyCode == '39' && keyControlStats == 'on') {
+                        var nowTime = parseInt(videoEle.currentTime);
+                        videoEle.currentTime = nowTime + 10;
+                    } else if (e.keyCode == '37' && keyControlStats == 'on') {
+                        var nowTime = parseInt(videoEle.currentTime);
+                        videoEle.currentTime = nowTime - 10;
+                    }
+                });
+            }
+
+            function bodyClickCheck(e) {
+                if ($(e.target).is('video, .video11box .btn_play, .video11box .ico_movreview')) {
+                    keyControlStats = 'on';
+                } else {
+                    keyControlStats = 'off';
+                    $(document).unbind('click', bodyClickCheck);
+                }
+            }
+        },
+
+        addDropDown: function () {
+
+            $("div[name='review-star-dropdown']").on('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $("#review-media-dropdown").removeClass("active");
+                $("#review-sort-dropdown").removeClass("active");
+                $(this).parent('.c_product_dropdown_wrap').removeClass('selected');
+                $(this).parent('.c_product_dropdown_wrap').toggleClass('active');
+                if ($(this).parent('.c_product_dropdown_wrap').hasClass('active')) {
+                    $(this).find('button').attr('aria-expanded', 'true');
+                } else {
+                    $(this).find('button').attr('aria-expanded', 'false');
+                }
+                review.sendClickLog(this);
+            });
+
+            $('div[name="review-star-dropdown-list"] > .list > li > button').on('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).parent('.c_product_dropdown_wrap').addClass('selected');
+            });
+
+            $('#review-media-type-dropdown > .list > li > button').on('click', function () {
+                $(this).attr('aria-expanded', 'false');
+                $(this).parent('.c_product_dropdown_wrap').removeClass('active');
+                $('#review-media-type').text($(this).text());
+                review_list_mediaReviewType = [];
+                review_list_page = 1;
+                review_list_mediaReviewType.push($(this).data('mediatype'));
+                review.sendParamsMessage('review_list_mediaReviewType', review_list_mediaReviewType);
+                review.sendParamsMessage('review_list_page', review_list_page);
+                review.getPagedReviewList();
+            });
+
+            $('#review-sort-type-dropdown > .list > li > button').on('click', function (e) {
+                $(this).attr('aria-expanded', 'false');
+                $(this).parent('.c_product_dropdown_wrap').removeClass('active');
+                $('#review-sort-type').text($(this).text());
+                review_list_page = 1;
+                review_list_sort_type = $(this).data('sorttype');
+                review.sendParamsMessage('review_list_sort_type', review_list_sort_type)
+                review.sendParamsMessage('review_list_page', review_list_page);
+                review.getPagedReviewList();
+            });
+
+            $('#review-option-search').on('click', function () {
+                review_list_options = $("#review-option").val();
+                review_list_page = 1;
+                review.sendParamsMessage('review_list_page', review_list_page);
+                review.sendParamsMessage('review_list_options', review_list_options);
+                review.getPagedReviewList();
+                rakeLog.sendRakeLog(this);
+
+            });
+
+            $("#review-sort-dropdown").on('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).removeClass('selected');
+                $(this).toggleClass('active');
+                if ($(this).hasClass('active')) {
+                    $(this).find('button').attr('aria-expanded', 'true');
+                } else {
+                    $(this).find('button').attr('aria-expanded', 'false');
+                }
+                $("#review-media-dropdown").removeClass("active");
+                $("#star-score-div").removeClass("active");
+
+                review.sendClickLog(this);
+            });
+
+            $("#review-media-dropdown").on('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).removeClass('selected');
+                $(this).toggleClass('active');
+                if ($(this).hasClass('active')) {
+                    $(this).find('button').attr('aria-expanded', 'true');
+                } else {
+                    $(this).find('button').attr('aria-expanded', 'false');
+                }
+                $("#star-score-div").removeClass("active");
+                $("#review-sort-dropdown").removeClass("active");
+
+                review.sendClickLog(this);
+            });
+        },
+
+        addKkuk: function () {
+            // parentAddKkuk
+            review.sendEventMessage('parentAddKkuk');
+
+            $('.kkuk').off('click').on('click', function (e) {
+                var contMapNo = $(this).data('contmapno');
+                if (!funcCheckIsLogin()) {
+                    var targetUrl = login_targetUrl + prdVar.prdNo + "?kkukNo=" + contMapNo + "&prdNo=" + prdVar.prdNo;
+                    review.sendEventMessage('loginFunc', targetUrl);
+                    return;
+                }
+                var kkukCount = $(this).children('.kkukCount').text();
+                kkukCount = parseInt(kkukCount.replace(/,/g, ''));
+                var ids = '#buttonKkuk' + contMapNo;
+                $(this).attr('data-log-actionid-area', "review_detail");
+                $(this).attr('data-log-actionid-label', "like");
+                if ($(this).hasClass("active")) {
+                    kkukCount = kkukCount - 1;
+                    $(this).removeClass("active");
+                    $(this).children('.kkukCount')
+                        .text(kkukCount.toLocaleString().split('.')[0]);
+                    $("#review-detail-kkuk-text").css('display', 'block');
+                    $(ids).attr('data-log-body', '{"current_product_no" : ' + $(this).attr('value') + ', "check_value" : "off"}');
+                    rakeLog.sendRakeLog(document.getElementById(ids), 'click');
+                } else {
+                    kkukCount = kkukCount + 1;
+                    $(this).addClass("active");
+                    $(this).children('.kkukCount')
+                        .text(kkukCount.toLocaleString().split('.')[0]);
+                    $("#review-detail-kkuk-text").css('display', 'none');
+                    $(ids).attr('data-log-body', '{"current_product_no" : ' + $(this).attr('value') + ', "check_value" : "on"}');
+                    rakeLog.sendRakeLog(document.getElementById(ids), 'click');
+                }
+                if (contMapNo === '' || contMapNo === null) {
+                    return;
+                }
+                return $.ajax({
+                    url: "/products/reviews/" + contMapNo + "/kkuk",
+                    dataType: 'text',
+                    contentType: 'text/html; charset=euc-kr'
+                }).success(function (data) {
+                }).fail(function (error) {
+                    console.error(error);
+                });
+            });
+        },
+
+        openReportPopup: function (contNo) {
+            if (contNo === '' || contNo === null) {
+                return;
+            }
+            if (!funcCheckIsLogin()) {
+                var targetUrl = login_targetUrl + prdVar.prdNo + "?prdNo=" + prdVar.prdNo;
+                review.sendEventMessage('loginFunc', targetUrl);
+                return;
+            }
+            var url = "/products/reviews/report?contDclObjContCd=06&contDclObjClfCd=01&contNo=";
+            url += contNo * 1;
+            var ret = window.open(url, "reviewReportPopup", "width=500,height=555");
+            review.sendPostMessage();
+        },
+
+        openMetaPopups : function (linkUrl) {
+            if (!funcCheckIsLogin()) {
+                var targetUrl = login_targetUrl + prdVar.prdNo + "?prdNo=" + prdVar.prdNo;
+                review.sendEventMessage('loginFunc', targetUrl);
+                return;
+            }
+            var ret = window.open(linkUrl, "metaBannerPopup", "scrollbars=yes,width=500,height=555");
+            window.addEventListener("message", reviewRefresh, false);
+
+            function reviewRefresh(e) {
+                if (e.origin.includes('11st.co.kr') &&
+                    e.data.id === 'metaDataSetting' &&
+                    e.data.action === 'close') {
+                    window.top.location.reload(true);
+                }
+            }
+        },
+
+        fetchClickUrl: function (clickUrl) {
+            fetch(clickUrl, {method: 'GET'});
+        },
+
+        openAdPopup: function () {
+            $('.adtext_button').attr("aria-expanded", true);
+            $('.c_ad_layer').addClass('active');
+        },
+
+        closeAdPopup: function () {
+            $('.adtext_button').attr("aria-expanded", false);
+            $('.c_ad_layer').removeClass('active');
+        },
+
+        getReviewDetailData: function (contentsMappingNo, contentsImageNo) {
+            var next = 0;
+            var previous = 0;
+            var total_keyword = [];
+            $('.review-theme-checkbox:checked').each(function () {
+                total_keyword.push($(this).data('name'));
+                rakeLog.sendRakeLog(this, 'click');
+            });
+
+            var data = {
+                pageSize: review_detail_size,
+                pageNo: review_detail_page,
+                pntVals: review_list_pnt_val,
+                rtype: review_list_mediaReviewType,
+                themeNm: total_keyword,
+                optNm: review_list_options,
+                sortType: review_list_sort_type,
+                appendable: true,
+                previous: previous,
+                next: next,
+                selector: contentsImageNo
+            };
+            return JSON.stringify(data);
+        },
+
+        getReviewListData: function () {
+            var total_keyword = [];
+            $('.review-theme-checkbox:checked').each(function () {
+                total_keyword.push($(this).data('name'));
+            });
+            var data = {
+                pageSize: review_list_size,
+                pageNo: review_list_page,
+                myProduct: prdVar.isMyProduct,
+                pntVals: review_list_pnt_val,
+                rtype: review_list_mediaReviewType,
+                sortType: review_list_sort_type,
+                themeNm: total_keyword,
+                optNm: review_list_options,
+                kkukNo: prdVar.kkukNo,
+                spn: prdVar.spn
+            };
+            return review.jsonToQueryString(data);
+        },
+        jsonToQueryString : function(json) {
+        return '?' +
+            Object.keys(json).map(function(key) {
+                return encodeURIComponent(key) + '=' +
+                    encodeURIComponent(json[key]);
+            }).join('&');
+        },
+
+        getPagedReviewListData: function () {
+            var total_keyword = [];
+            $('.review-theme-checkbox:checked').each(function () {
+                total_keyword.push($(this).data('name'));
+            });
+            var data = {
+                pageSize: review_list_size,
+                pageNo: review_list_page,
+                myProduct: prdVar.isMyProduct,
+                pntVals: review_list_pnt_val,
+                rtype: review_list_mediaReviewType,
+                themeNm: total_keyword,
+                optNm: review_list_options,
+                sortType: review_list_sort_type,
+                appendable: true
+            };
+            return review.jsonToQueryString(data);
+        },
+
+        selectStarScore: function () {
+
+            $("#star-score-close").on('click', function () {
+                $("#star-score-div").removeClass("active");
+            });
+
+            $("input[name='grade']").on('click', function () {
+                var grade = $("input[name='grade']:checked").val();
+                var html = "";
+                review_list_pnt_val = [];
+                if (grade === '5') {
+                    html = '<span class="icon_grade">★</span> 5점';
+                    review_list_pnt_val.push("5");
+                } else if (grade === '4') {
+                    html = '<span class="icon_grade">★</span> 4점';
+                    review_list_pnt_val.push("4");
+                } else if (grade === '3') {
+                    html = '<span class="icon_grade">★</span> 3점';
+                    review_list_pnt_val.push("3");
+                } else if (grade === '2') {
+                    html = '<span class="icon_grade">★</span> 2점';
+                    review_list_pnt_val.push("2");
+                } else if (grade === '1') {
+                    html = '<span class="icon_grade">★</span> 1점';
+                    review_list_pnt_val.push("1");
+                } else {
+                    html = '평점전체'
+                    review_list_pnt_val.push("");
+                }
+                $("#star-score-text").html(html);
+                $("#star-score-div").removeClass("active");
+                review_list_page = 1;
+                review.sendParamsMessage('review_list_page', review_list_page);
+                review.sendParamsMessage('review_list_pnt_val', review_list_pnt_val);
+
+                review.getPagedReviewList();
+                review.sendPostMessage();
+            });
+        },
+
+        checkIE9: function () {
+            return navigator.userAgent.toLowerCase().indexOf("msie 9") !== -1;
+        },
+
+        checkIE: function () {
+            return (navigator.appName == 'Netscape' && browse.indexOf('trident') != -1) || (browse.indexOf("msie") != -1);
+        },
+
+        alertIE9: function () {
+            if (review.checkIE9()) {
+                alert(explorer9ReturnMessage);
+                return true;
+            }
+            return false;
+        },
+
+        addReviewListEvent: function () {
+            $('.c_review_recommend_list .swiper-container').each(function (index, element) {
+                var $this = $(this);
+                var swiper = new Swiper($this, {
+                    loop: false,
+                    spaceBetween: 22,
+                    touchRatio: 0,
+                    pagination: {
+                        el: ".c_pagination_develop",
+                        type: 'fraction',
+                        renderFraction: function (currentClass, totalClass, index, total) {
+                            return '<p class="page"><strong aria-label="현재페이지">'
+                                + '<span class="' + currentClass + '">' + index + ' </span>'
+                                + '</strong><span class="sr-only">전체 페이지</span>'
+                                + '<span class="' + totalClass + '">' + total + ' </span>' + '</p>';
+                        },
+                    },
+                    navigation: {
+                        nextEl: ".navigator .next",
+                        prevEl: ".navigator .previous",
+                    },
+                    a11y: {
+                        prevSlideMessage: '이전 슬라이드',
+                        nextSlideMessage: '다음 슬라이드',
+                        firstSlideMessage: '첫번째 슬라이드',
+                        lastSlideMessage: '마지막 슬라이드',
+                        paginationBulletMessage: '{{index}} 번 슬라이드로 이동'
+                    },
+                });
+
+                swiper.on('slideChangeTransitionEnd', function () {
+                    $('.swiper-slide-active ul li div a').each(function (v) {
+                        var isImpression = $(this).attr('data-impression');
+                        var dispUrl = $(this).attr('data-impression-url');
+                        if (isImpression !== "false") {
+                            $(this).attr('data-impression', "false");
+                            $(this).attr('data-sended', "Y");
+                            rakeLog.sendRakeLog(this, 'impression');
+                            fetch(dispUrl, {method: 'GET'});
+                        }
+                    });
+                });
+            });
+
+            $('.ad-item-box').on('click', function () {
+                var clickUrl = $(this).attr('click-url');
+                review.fetchClickUrl(clickUrl);
+            });
+
+            $('.cont_review_hide').each(function () {
+                $(this).css('overflow', 'auto');
+                $(this).addClass('text-expanded');
+                if ($(this).prop('scrollHeight') <= ($(this).prop('clientHeight') + 3)) {
+                    $(this).siblings('.review-expand').remove();
+                }
+                $(this).css('overflow', '');
+                review.sendPostMessage();
+            });
+
+            review.applySellerReplyEvent();
+
+            $('.review-expand-open-text').on('click', function () {
+                $(this).parent().parent('.cont_text_wrap').toggleClass('active');
+                $(this).css('display', 'none');
+                $(this).siblings('.review-expand-close-text').css('display', 'block');
+                review.sendPostMessage();
+                review.sendMoreViewLog(this);
+            });
+
+            $('.review-expand-close-text').on('click', function () {
+                $(this).parent().parent('.cont_text_wrap').toggleClass('active');
+                $(this).css('display', 'none');
+                $(this).siblings('.review-expand-open-text').css('display', 'block');
+                review.sendPostMessage();
+            });
+
+            $('.review-list-detail').on('click', function () {
+                if (review.alertIE9()) {
+                    return;
+                }
+                var detail_contentsMappingNo = $(this).data("contmapno");
+                var detail_contentsImageNo = $(this).data("contimgno");
+                var detail_pageNo = $(this).data("pageno");
+                review_detail_page = detail_pageNo;
+                review.sendParamsMessage('review_detail_page', review_detail_page);
+                review.getReviewDetail(detail_contentsMappingNo, detail_contentsImageNo);
+                review.sendEventMessage('addSummaryVideoEvent');
+                review.sendEventMessage('reviewListDetailEvent');
+                review.sendThumbnailClickLog(this);
+            });
+
+            $('.review-list-detail-more').on('click', function () {
+                if (review.alertIE9()) {
+                    return;
+                }
+                var detail_contentsMappingNo = $(this).data("contmapno");
+                var detail_contentsImageNo = 0;
+                var detail_pageNo = $(this).data("pageno");
+                review_detail_page = detail_pageNo;
+                review.sendParamsMessage('review_detail_page', review_detail_page);
+                review.getReviewDetail(detail_contentsMappingNo, detail_contentsImageNo);
+                review.sendEventMessage('addSummaryVideoEvent');
+                review.sendEventMessage('reviewListDetailEvent');
+                review.sendThumbnailClickLog(this);
+            });
+
+            $(".review-next-list").on('click', function () {
+                $(".review-next-list-div").remove();
+                review.getPagedReviewList();
+            });
+            $('.review-report').on('click', function () {
+                var contNo = $(this).data('contno');
+                review.openReportPopup(contNo);
+            });
+            $('.c_product_banner_profile').on('click', function () {
+                var linkUrl = $(this).data('linkUrl');
+                review.openMetaPopups(linkUrl);
+            });
+            $('.adtext_button').on('click', function () {
+                review.openAdPopup();
+            });
+            $('.c_ad_layer_close').on('click', function () {
+                review.closeAdPopup();
+            });
+            $('.review-theme-checkbox').on('click', function () {
+                $(".review-all-theme-checkbox").prop('checked', false);
+                if ($('.review-theme-checkbox:checked').length === 0) {
+                    $('.review-all-theme-checkbox').prop('checked', true);
+                }
+                review_list_page = 1;
+                review.sendParamsMessage('review_list_page', review_list_page);
+                review.getPagedReviewList();
+                rakeLog.sendRakeLog(this, 'click');
+            });
+            $(".review-all-theme-checkbox").on('click', function () {
+                $('.review-theme-checkbox').prop('checked', false);
+                if ($('.review-theme-checkbox:checked').length === 0) {
+                    $('.review-all-theme-checkbox').prop('checked', true);
+                }
+                review_list_page = 1;
+                review.sendParamsMessage('review_list_page', review_list_page);
+                review.getPagedReviewList();
+            });
+            if ($("#reviewEpgBtn") !== undefined) {
+                $("#reviewEpgBtn").on('click', function () {
+                    review.sendEventMessage('goToReviewEpgPage');
+                });
+            }
+            $('.seller_store').off('click').on('click', function () {
+                review.goToStore($(this).data('link'));
+            });
+        },
+        addReviewPagedListEvent: function () {
+
+            $('.c_review_recommend_list .swiper-container').each(function (index, element) {
+                var $this = $(this);
+                var swiper = new Swiper($this, {
+                    loop: false,
+                    spaceBetween: 22,
+                    touchRatio: 0,
+                    pagination: {
+                        el: ".c_pagination_develop",
+                        type: 'fraction',
+                        renderFraction: function (currentClass, totalClass, index, total) {
+                            return '<p class="page"><strong aria-label="현재페이지">'
+                                + '<span class="' + currentClass + '">' + index + ' </span>'
+                                + '</strong><span class="sr-only">전체 페이지</span>'
+                                + '<span class="' + totalClass + '">' + total + ' </span>' + '</p>';
+                        },
+                    },
+                    navigation: {
+                        nextEl: ".navigator .next",
+                        prevEl: ".navigator .previous",
+                    },
+                    a11y: {
+                        prevSlideMessage: '이전 슬라이드',
+                        nextSlideMessage: '다음 슬라이드',
+                        firstSlideMessage: '첫번째 슬라이드',
+                        lastSlideMessage: '마지막 슬라이드',
+                        paginationBulletMessage: '{{index}} 번 슬라이드로 이동'
+                    },
+                });
+
+                swiper.on('slideChangeTransitionEnd', function () {
+                    $('.swiper-slide-active ul li div a').each(function (v) {
+                        var isImpression = $(this).attr('data-impression');
+                        var dispUrl = $(this).attr('data-impression-url');
+                        if (isImpression !== "false") {
+                            $(this).attr('data-impression', "false");
+                            $(this).attr('data-sended', "Y");
+                            rakeLog.sendRakeLog(this, 'impression');
+                            fetch(dispUrl, {method: 'GET'});
+                        }
+                    });
+                });
+            });
+
+            $('.ad-item-box').on('click', function () {
+                var clickUrl = $(this).attr('click-url');
+                review.fetchClickUrl(clickUrl);
+            });
+
+            $('.cont_review_hide').each(function () {
+                if ($(this).hasClass('text-expanded')) {
+                    return;
+                }
+                $(this).css('overflow', 'auto');
+                $(this).addClass('text-expanded');
+                if ($(this).prop('scrollHeight') <= (($(this).prop('clientHeight')) + 3)) {
+                    $(this).siblings('.review-expand').remove();
+                }
+                $(this).css('overflow', '');
+                review.sendPostMessage();
+            });
+
+            $('.review-expand-open-text').off('click').on('click', function () {
+                $(this).parent().parent('.cont_text_wrap').toggleClass('active');
+                $(this).css('display', 'none');
+                $(this).siblings('.review-expand-close-text').css('display', 'block');
+            });
+
+            $('.review-expand-close-text').off('click').on('click', function () {
+                $(this).parent().parent('.cont_text_wrap').toggleClass('active');
+                $(this).css('display', 'none');
+                $(this).siblings('.review-expand-open-text').css('display', 'block');
+            });
+
+            $('.review-list-detail').on('click', function () {
+                if (review.alertIE9()) {
+                    return;
+                }
+                var detail_contentsMappingNo = $(this).data("contmapno");
+                var detail_contentsImageNo = $(this).data("contimgno");
+                var detail_pageNo = $(this).data("pageno");
+                review_detail_page = detail_pageNo;
+                review.sendParamsMessage('review_detail_page', review_detail_page);
+                review.getReviewDetail(detail_contentsMappingNo, detail_contentsImageNo);
+                review.sendEventMessage('reviewListDetailEvent');
+            });
+
+            $('.review-list-detail-more').on('click', function () {
+                if (review.alertIE9()) {
+                    return;
+                }
+                var detail_contentsMappingNo = $(this).data("contmapno");
+                var detail_contentsImageNo = 0;
+                var detail_pageNo = $(this).data("pageno");
+                review_detail_page = detail_pageNo;
+                review.sendParamsMessage('review_detail_page', review_detail_page);
+                review.getReviewDetail(detail_contentsMappingNo, detail_contentsImageNo);
+                review.sendEventMessage('reviewListDetailEvent');
+            });
+
+            $(".review-next-list").on('click', function () {
+                if (review.alertIE9()) {
+                    return;
+                }
+                $(".review-next-list-div").remove();
+                review.getPagedReviewList();
+            });
+
+            $('.adtext_button').on('click', function () {
+                review.openAdPopup();
+            });
+            $('.c_ad_layer_close').on('click', function () {
+                review.closeAdPopup();
+            });
+
+            $('.review-report').on('click', function () {
+                var contNo = $(this).data('contno');
+                review.openReportPopup(contNo);
+            });
+            $('.c_product_banner_profile').on('click', function () {
+                var linkUrl = $(this).data('linkUrl');
+                review.openMetaPopups(linkUrl);
+            });
+            $('.seller_store').off('click').on('click', function () {
+                review.goToStore($(this).data('link'));
+            });
+            review.applySellerReplyEvent()
+        },
+
+        applySellerReplyEvent: function () {
+            $('.seller-reply-text').each(function () {
+                if (!$(this).hasClass('active')) {
+                    $(this).toggleClass('active');
+                    if ($(this).prop('scrollHeight') <= 74) {
+                        $(this).find('button').css('display', 'none');
+                    }
+                    $(this).toggleClass('active');
+                }
+                $(this).find('button').off('click').on('click', function () {
+                    if ($(this).text() === '더보기') {
+                        $(this).attr('data-log-actionid-area', 'reviewtab');
+                        $(this).attr('data-log-actionid-label', 'seller_comment_more');
+                        $(this).attr('data-log-body', '{"current_product_no" : ' + prdVar.prdNo + '}');
+                    } else {
+                        $(this).removeAttr('data-log-actionid-area');
+                        $(this).removeAttr('data-log-actionid-label');
+                        $(this).removeAttr('data-log-body');
+                    }
+                    $(this).parent('.seller-reply-text').toggleClass('active');
+                    if ($(this).parent('.seller-reply-text').hasClass('active')) {
+                        $(this).text('닫기');
+                    } else {
+                        $(this).text('더보기');
+                    }
+                    review.sendPostMessage();
+                });
+            });
+        },
+
+        applyShadow: function () {
+            review.sendEventMessage('applyShadow');
+        },
+
+        goToStore: function (storeUrl) {
+            if (storeUrl == null || storeUrl === '') {
+                return;
+            }
+            review.sendEventMessage('goToStore', storeUrl);
+        },
+
+        init: function () {
+            // atfReviewEvent
+            if (review.checkIE9()) {
+                var params = {
+                    "functionName": 'atfReviewEvent'
+                };
+                window.parent.postMessage(JSON.stringify(params), "*");
+            } else {
+                review.sendEventMessage('atfReviewEvent');
+            }
+            review.addKkuk();
+            review.checkIE9();
+            review.sendParamsMessage('explorer', explorer);
+        }
+    };
+    return review;
+}));

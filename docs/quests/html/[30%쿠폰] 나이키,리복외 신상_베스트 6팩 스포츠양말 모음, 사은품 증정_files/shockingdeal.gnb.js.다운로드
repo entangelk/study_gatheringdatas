@@ -1,0 +1,340 @@
+var shockingDeal = {};
+
+//header
+shockingDeal.gnb = {
+	sMetaCtgrData : null,
+	sLargeCtgrData : null,
+	sMiddleCtgrData : null,
+	subTitleData : null,
+	playElevenData : null,
+	riseRankPrdData : null,
+	searchTextData : null,
+	shockDealCtgrData : null,
+	searchDefaultText : '쇼킹딜 상품검색',
+	setDefaultData  : function(){
+		this.sMetaCtgrData     = typeof(DealMetaCtgr) != 'undefined' ? DealMetaCtgr : null;
+		this.sLargeCtgrData    = typeof(DealLargeCtgr) != 'undefined' ? DealLargeCtgr : null;
+		this.sMiddleCtgrData   = typeof(DealMiddleCtgr) != 'undefined' ? DealMiddleCtgr : null;
+		this.subTitleData      = typeof(GnbSubTitleBanner) != 'undefined' ? GnbSubTitleBanner : null;
+		this.playElevenData    = typeof(GnbPlayElevenBnner) != 'undefined' ? GnbPlayElevenBnner : null;
+		this.riseRankPrdData   = typeof(GnbRiseRankPrd) != 'undefined' ? GnbRiseRankPrd : null;
+		this.searchTextData    = typeof(GnbSearchText) != 'undefined' ? GnbSearchText : null;
+		this.shockDealCtgrData = typeof(shockingDealCtgrList) != 'undefined' ? shockingDealCtgrList : null;
+	},
+	renderDealGnb : function () {
+		var dealGnbHtml = '',
+		$dealGnb = jQuery('#dealGnb');
+		if ($dealGnb.length == 0) {
+			return;
+		}
+
+		dealGnbHtml += '<div class="inner" data-log-actionid-area="shockingdeal_gnb">';
+		dealGnbHtml += '	<h1 class="skip">쇼킹딜<\/h1>';
+		dealGnbHtml += '	<div class="c_shocking_category_button">';
+		dealGnbHtml += '		<button type="button" aria-haspopup="dialog" aria-controls="shockingCategory" id="dealCategoryAll" onclick="javascript:ga(\'send\',\'event\',\'PC_쇼킹딜_GNB\',\'카테고리\',\'전체카테고리\');return false;" data-log-actionid-label="all_category">쇼킹딜 카테고리<\/button>';
+		dealGnbHtml += '		<div class="c_shocking_category_layer" id="shockingCategory" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="shockingCategoryTitle">';
+		dealGnbHtml += '			<h2 id="shockingCategoryTitle" class="skip">카테고리<\/h2>';
+		dealGnbHtml += '			<ul id="dealCategory"><\/ul>';
+		dealGnbHtml += '			<button type="button" class="close" onclick="javascript:ga(\'send\',\'event\',\'PC_쇼킹딜_GNB\',\'카테고리\',\'닫기\');return false;" data-log-actionid-label="category_close">쇼킹딜 카테고리 닫기<\/button>';
+		dealGnbHtml += '		<\/div>';
+		dealGnbHtml += '	<\/div>';
+		dealGnbHtml += '	<div class="c_shocking_servicelink" data-log-actionid-label="corner">';
+		dealGnbHtml += '		<h2 class="skip">주요 서비스<\/h2>';
+		dealGnbHtml += '		<ul id="dealServiceList"><\/ul>';
+		dealGnbHtml += '	<\/div>';
+		dealGnbHtml += '<\/div>';
+		
+		$dealGnb.html(dealGnbHtml);
+		
+	},
+	//메타카테고리 셋팅
+	setGnbMetaCategory: function () {
+		if (this.sMetaCtgrData != null) {
+			var $parent = jQuery('#dealCategory');
+			var ctgrData = this.sMetaCtgrData.DATA;
+			var ctgrHtml = '';
+			
+			var rakeLogBody = new RakeData();
+			rakeLogBody.setContentType(rakeLogBody.ContentType.CATEGORY);
+
+			for (var idx = 0; idx < this.sMetaCtgrData.totalCount; idx++) {
+				rakeLogBody.setContentNo(ctgrData[idx].DISP_CTGR_NO);
+
+				ctgrHtml += '<li id="meta' + ctgrData[idx].DISP_CTGR_NO + '">';
+				ctgrHtml += '	<a href="#" class="ct" data-log-actionid-label="meta_category" data-log-body=\'' + JSON.stringify(rakeLogBody.getData()) + '\'>' + ctgrData[idx].DISP_CTGR_TXT + '<\/a>';
+				ctgrHtml += '	<dl class="box_2depth" id="metaCtgr' + ctgrData[idx].DISP_CTGR_NO + '">';
+				ctgrHtml += '	<\/dl>';
+				ctgrHtml += '<\/li>';
+			}
+			$parent.append(ctgrHtml);
+		}
+	},
+	//대카테고리 셋팅
+	setGnbLargeCategory: function () {
+		if (this.sLargeCtgrData != null) {
+			var ctgrData = this.sLargeCtgrData.DATA;
+	 
+			var rakeLogBody = new RakeData();
+			rakeLogBody.setContentType(rakeLogBody.ContentType.CATEGORY);
+			
+			for (var idx = 0; idx < this.sLargeCtgrData.totalCount; idx++) {
+				rakeLogBody.setContentNo(ctgrData[idx].DISP_CTGR_NO);
+				
+ 				var $parent = jQuery('#metaCtgr' + ctgrData[idx].HGRNK_CTGR_NO);
+				var clickCode = 'DEA0105_' + shockingDeal.gnb.getCtgrClickCodeIdx(ctgrData[idx].DISP_CTGR_NO);
+
+				var ctgrHtml = '';
+				ctgrHtml += '<div class="group" id="ctgr' + ctgrData[idx].DISP_CTGR_NO + '">';
+				ctgrHtml += '	<dt>';
+				ctgrHtml += '		<a href="javascript:shockingDeal.gnb.goDealSubCategory(' + ctgrData[idx].DISP_CTGR_NO + ',\'' + clickCode + '\');ga(\'send\',\'event\',\'PC_쇼킹딜_GNB\',\'카테고리\',\'' + ctgrData[idx].DISP_CTGR_TXT + '\');" data-log-actionid-label="large_category" data-log-body=\'' + JSON.stringify(rakeLogBody.getData()) + '\'>' + ctgrData[idx].DISP_CTGR_TXT + '<\/a>';
+				ctgrHtml += '	<\/dt>';
+				if ('947634' != ctgrData[idx].DISP_CTGR_NO) {	
+					ctgrHtml += '<dd>';
+					ctgrHtml += '	<a href="javascript:shockingDeal.gnb.goDealSubCategory(' + ctgrData[idx].DISP_CTGR_NO + ',\'' + clickCode + '\');ga(\'send\',\'event\',\'PC_쇼킹딜_GNB\',\'카테고리\',\'' + ctgrData[idx].DISP_CTGR_TXT + '_BEST100\');" data-log-actionid-label="middle_category" data-log-body=\'' + JSON.stringify(rakeLogBody.getData()) + '\'>BEST100<\/a>';
+					ctgrHtml += '<\/dd>';
+				}
+				ctgrHtml += '<\/div>';
+				$parent.append(ctgrHtml);
+			}
+		}
+	},
+	//중카테고리 셋팅
+	setGnbMiddleCategory: function () {
+		if (this.sMiddleCtgrData != null) {		
+ 			var ctgrData = this.sMiddleCtgrData.DATA; 
+ 			
+ 			var rakeLogBody = new RakeData();
+			rakeLogBody.setContentType(rakeLogBody.ContentType.CATEGORY);
+ 	
+			var oldHgrnkNo = "";
+			var hgrnkCnt = 0;	 
+			for (var idx = 0; idx < this.sMiddleCtgrData.totalCount; idx++) {
+				var newHgrnkNo =  ctgrData[idx].HGRNK_CTGR_NO;
+				 
+				if(newHgrnkNo == oldHgrnkNo){ 
+					hgrnkCnt++;
+				}else{
+					hgrnkCnt=0;
+				}
+				
+				rakeLogBody.setContentNo(ctgrData[idx].DISP_CTGR_NO);
+				
+		        if(hgrnkCnt <= 8 ){
+ 		        	var clickCode = 'DEA0110_' + shockingDeal.gnb.getCtgrClickCodeIdx(ctgrData[idx].HGRNK_CTGR_NO);	
+					var $parent = jQuery('div #ctgr' + ctgrData[idx].HGRNK_CTGR_NO);	
+					
+					var ctgrHtml = '';
+					ctgrHtml += '<dd id="ctgr' + ctgrData[idx].DISP_CTGR_NO + '">';
+			        ctgrHtml += '	<a href="javascript:shockingDeal.gnb.goDealSubCategory(' + ctgrData[idx].DISP_CTGR_NO + ',\'' + clickCode + '\');ga(\'send\',\'event\',\'PC_쇼킹딜_GNB\',\'카테고리\',\'' + ctgrData[idx].DISP_CTGR_NM + '\');" data-log-actionid-label="middle_category" data-log-body=\'' + JSON.stringify(rakeLogBody.getData()) + '\'>' + ctgrData[idx].DISP_CTGR_NM + '<\/a>';
+	  				ctgrHtml += '<\/dd>'; 
+					
+					$parent.append(ctgrHtml); 
+					oldHgrnkNo = newHgrnkNo;
+				}else{
+					if(newHgrnkNo == oldHgrnkNo){ 
+						hgrnkCnt++;
+					}else{
+						hgrnkCnt=0;
+					} 
+					oldHgrnkNo = newHgrnkNo; 
+				}
+			}
+		}
+	},
+	
+	setCategoryEvent: function () {
+		var $dealGnb = jQuery('#dealGnb'),
+		$dealCategoryClose = jQuery('#shockingCategory').find('.close'),
+		$dealCategoryBtn = jQuery('#dealCategoryAll'),
+		$dealCategory = jQuery('#dealCategory');
+		$dealCategoryLayer = jQuery('#shockingCategory');
+		$dealCategoryBtn.click(function(){
+			if($dealGnb.hasClass('b_shocking_category_visible')) {
+				$dealGnb.removeClass('b_shocking_category_visible');
+				$dealCategoryLayer.attr('aria-hidden', 'true');
+			} else {
+				$dealCategory.find('li').removeClass('active').eq(0).addClass('active');
+				$dealGnb.addClass('b_shocking_category_visible');
+				$dealCategoryLayer.attr('aria-hidden', 'false');
+			}
+		});
+		$dealCategoryClose.click(function(){
+			$dealGnb.removeClass('b_shocking_category_visible');
+			$dealCategoryLayer.attr('aria-hidden', 'true');
+		});
+		$dealCategory.find('li').mouseover(function () {
+			jQuery(this).addClass('active').siblings().removeClass('active');
+		}).find('.ct').click(function (e) {
+			e.preventDefault();
+			jQuery(this).parent().addClass('active').siblings().removeClass('active');
+		});
+	},
+	showPopKeyword: function () {
+		var timer = null,
+		$searchLayer = jQuery('#header_pop_kwd');
+		if (jQuery('ol[name=pop_kwd_list]', $searchLayer).html().trim() === '') {
+			var url = shockingDeal.gnb.getDealHost() + '/browsing/ShockingDealAjaxAction.tmall?method=getPopKeywordAjax';
+
+			jQuery.ajax({
+				url: url,
+				dataType: 'jsonp',
+				scriptCharset: 'UTF-8',
+				cache: true,
+				success: function (data) {
+					
+					if (data.POP_KWD !== undefined && data.POP_KWD.length >= 5) {
+						
+						var cont = '';
+						for (var idx = 0; idx < data.POP_KWD.length; idx++) {
+							var popKwd = data.POP_KWD[idx];
+							cont += '<li><a href="#" onclick="shockingDeal.gnb.goSearchKwd(\'' + popKwd.KEYWORD + '\');ga(\'send\',\'event\',\'PC_쇼킹딜_GNB_검색창\',\'인기검색어\',\'' + popKwd.KEYWORD + '\');return false;" data-log-actionid-label="searchbox_popular" data-log-body="{\'search_keyword\':\'' + popKwd.KEYWORD + '\', \'position_l2\':' + (idx + 1) + '}"><span class="number">' + (idx + 1) + '<\/span><span class="text">' + popKwd.KEYWORD + '<\/span><\/a><\/li>';
+						}
+						jQuery('ol[name=pop_kwd_list]', $searchLayer).html(cont);
+						jQuery($searchLayer).on('click', '.c_shocking_ranking_close', function () {
+							$searchLayer.removeClass('active');
+						}).on('focusin focusout', function (e) {
+							switch (e.type) {
+								case 'focusin':
+									clearTimeout(timer);
+									timer = null;
+									break;
+								case 'focusout':
+									timer = setTimeout(function () {
+										$searchLayer.removeClass('active');
+									}, 20);
+									break;
+							}
+						});
+						$searchLayer.addClass('active');
+					}
+				}
+			});
+		} else {
+			$searchLayer.addClass('active');
+		}
+	},
+	
+	goSearchKwd : function (keyword) {
+		if(keyword != undefined){
+			keyword = keyword.trim();
+			if(keyword != ''){
+				document.location.href = shockingDeal.gnb.getDealHost()+'/browsing/DealAction.tmall?method=getSearch&kwd=' + escape(encodeURIComponent(keyword));
+				return false;
+			}
+		}
+	},
+	
+	goSearch : function(targetId){
+		var searchTextLnkurl = jQuery('#searchTextLnkUrl').val();
+		if (searchTextLnkurl == '') {
+			var $target = jQuery('#' + targetId);
+
+			var kwd = $target.val();
+			if(kwd != undefined){
+				kwd = kwd.trim();
+				if(kwd != '' && kwd != this.searchDefaultText){
+					var schObj = $target.get(0);
+					var rakeLogBody = "{'search_keyword':'" + kwd + "'}";
+					
+					schObj.setAttribute("data-log-actionid-label", "searchbox_input");
+					schObj.setAttribute("data-log-body", rakeLogBody);
+        			rakeLog.sendRakeLog(schObj, 'click');
+        			
+			        
+					document.location.href = shockingDeal.gnb.getDealHost()+'/browsing/DealAction.tmall?method=getSearch&kwd=' + escape(encodeURIComponent(kwd));
+					return false;
+				}else{
+					alert('검색어를 입력해주세요.');
+					$target.val('').focus();
+					return false;
+				}
+			}
+		} else {
+			document.location.href = searchTextLnkurl;
+		}
+	},
+	
+	setDealService : function () {
+		var $servieArea = jQuery('#dealServiceList');
+		var basicDealServiceHtml = '';
+		var themeDealServiceHtml = '';
+		if ($servieArea.length == 0) {
+			return;
+		}
+		var dealUrl = shockingDeal.gnb.getDealHost();
+		basicDealServiceHtml = '<li><a href="'+dealUrl+'/browsing/DealAction.tmall?method=getTodayDeal" onclick="javascript:ga(\'send\',\'event\',\'PC_쇼킹딜_GNB\',\'상단영역_주요코너\',\'오늘의 딜\');" data-log-body=\'{"btn_name":"오늘의 딜"}\'>오늘의 딜</a></li>';
+		basicDealServiceHtml += '<li><a href="'+dealUrl+'/browsing/DealAction.tmall?method=getDealBest" onclick="javascript:ga(\'send\',\'event\',\'PC_쇼킹딜_GNB\',\'상단영역_주요코너\',\'베스트\');" data-log-body=\'{"btn_name":"베스트"}\'>베스트</a></li>';
+		basicDealServiceHtml += '<li><a href="'+dealUrl+'/browsing/DealAction.tmall?method=getDepartmentDeal" onclick="javascript:ga(\'send\',\'event\',\'PC_쇼킹딜_GNB\',\'상단영역_주요코너\',\'백화점&amp;몰\');" data-log-body=\'{"btn_name":"백화점&amp;몰"}\'>백화점&amp;몰</a></li>';
+		basicDealServiceHtml += '<li><a href="'+dealUrl+'/browsing/DealAction.tmall?method=getTimeDeal" onclick="javascript:ga(\'send\',\'event\',\'PC_쇼킹딜_GNB\',\'상단영역_주요코너\',\'타임딜\');" data-log-body=\'{"btn_name":"타임딜"}\'>타임딜</a></li>';
+		
+		themeDealServiceHtml = shockingDeal.gnb.setGnbThemeCatagory();
+
+		$servieArea.html('').append(basicDealServiceHtml);
+		$servieArea.append(themeDealServiceHtml);
+	},
+	
+	setGnbThemeCatagory : function () {
+		if (this.shockDealCtgrData != null){
+			var ctgrData = this.shockDealCtgrData.DATA;
+			
+			var rakeLogBody = new RakeData();
+			rakeLogBody.setContentType(rakeLogBody.ContentType.CATEGORY);
+		
+			var ctgrHtml = '';
+			var idxCnt = this.shockDealCtgrData.totalCount;
+			for(var idx=0; idx < idxCnt; idx ++){
+				//rakeLogBody.setContentNo(ctgrData[idx].DISP_CTGR_NO);
+				var dispCtgrNm = ctgrData[idx].DISP_CTGR_NM.replace('핫딜', '');
+				ctgrHtml += '<li><a href="javascript:shockingDeal.gnb.goDealThemeCategory(' + ctgrData[idx].DISP_CTGR_NO + ',\'\');ga(\'send\',\'event\',\'PC_쇼킹딜_GNB\',\'테마카테고리\',\'' + dispCtgrNm.trim() + '\');" data-log-body=\'{"btn_name":"' + dispCtgrNm.trim() + '"}\'>'+dispCtgrNm.trim()+'<\/a><\/li>';
+				if(idx==5){
+					break;
+				}
+			}
+			
+			return ctgrHtml;
+		} 
+	},
+	getDealHost: function() {
+		if(document.location.href.indexOf("https") == 0 
+				&& _SHOCKING_DEAL_URL_.indexOf('http://') == 0) {
+			return _SHOCKING_DEAL_URL_.replace('http://', 'https://');
+		}
+		return _SHOCKING_DEAL_URL_;
+	},
+	// Theme 페이지 이동처리
+	goDealThemeCategory : function(dispCtgrNo, code){
+		var url = shockingDeal.gnb.getDealHost() + '/browsing/DealAction.tmall?method=getThemeCtgr&dispCtgrNo='+dispCtgrNo;
+		return goStatUrl(url, code);
+	},
+	// GNB 페이지 이동처리
+	goDealSubCategory : function(dispCtgrNo, code, depth){
+		var url = shockingDeal.gnb.getDealHost()+'/browsing/DealAction.tmall?method=getCategory&dispCtgrNo='+dispCtgrNo;
+		return goStatUrl(url, code);
+	},
+	//카테고리관련 키값 가져오기 
+	getCtgrClickCodeIdx : function(ctgrNo){
+		var idx = '';
+
+		try{
+			var key = 'ShockingDealClickIdx.l' + ctgrNo;
+			if(typeof(ShockingDealClickIdx) != 'undefined'){
+				idx = eval(key);
+			}
+		}catch(e){
+		}
+
+		return idx;
+	},	
+	init : function(){
+		this.setDefaultData();
+		this.setDealService();
+		this.setGnbMetaCategory();
+		this.setGnbLargeCategory();
+		this.setGnbMiddleCategory();
+		this.setCategoryEvent();
+	},
+	render : function () {
+		this.renderDealGnb();
+		this.init();
+	}
+};

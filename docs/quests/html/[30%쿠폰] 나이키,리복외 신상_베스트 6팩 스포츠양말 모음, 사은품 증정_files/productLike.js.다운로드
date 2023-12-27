@@ -1,0 +1,142 @@
+/**
+ * @method: Product Like - productLike
+ */
+(function(root, factory) {
+    'use strict';
+    if (typeof define === 'function' && define.amd) {
+        define([
+            'jquery'
+        ], factory);
+    } else {
+        root.productLike = factory(
+            root.jQuery
+        );
+    }
+}(window || this, function($) {
+    'use strict';
+    var prdVar = productPrdInfo;
+
+    var productLike = {
+        requestLikeProduct: function () {
+            if(!funcCheckIsLogin()) {
+                openLogin(5, "afterLikeSrchLogin");
+                return;
+            }
+
+            if ($("#like-add").hasClass('active')) {
+                this.removeLikeProduct(prdVar.prdNo);
+            } else {
+                this.addLikeProduct(prdVar.prdNo);
+            }
+        },
+
+        sendLikeLog : function() {
+            rakeLog.sendRakeLog(document.getElementById('like-add'), 'click');
+        },
+
+        //좋아요 view control
+        likeChange : function(flag){
+            if (flag == 'add') {
+                $("#like-add").addClass('active');
+                $("#like-add").contents()[0].textContent = "찜취소";
+                $("#add-like-prd").addClass('active').attr('aria-hidden', true);
+                $("#delete-like-prd").removeClass('active').attr('aria-hidden', false);
+
+                this.changeLikeCheckValue(flag);
+            } else {
+                $("#like-add").removeClass('active');
+                $("#like-add").contents()[0].textContent = "찜하기";
+                $("#add-like-prd").removeClass('active').attr('aria-hidden', false);
+                $("#delete-like-prd").addClass('active').attr('aria-hidden', true);
+
+                this.changeLikeCheckValue(flag);
+            }
+        },
+
+        changeLikeCheckValue : function(flag){
+            var logBody = $("#like-add").attr('data-log-body');
+            var parsedLogBody;
+            try {
+                parsedLogBody = JSON.parse(logBody);
+            } catch (e) {
+                console.error("likeChange JSON parsing error:", e);
+                return;
+            }
+
+            if (flag == 'add') {
+                parsedLogBody.check_value = 'on';
+            } else {
+                parsedLogBody.check_value = 'off';
+            }
+
+            $("#like-add").attr('data-log-body', JSON.stringify(parsedLogBody));
+        },
+
+        //좋아요
+        addLikeProduct : function(prdNo) {
+            if(!funcCheckIsLogin()) {
+                openLogin(5, "afterLikeSrchLogin");
+                return;
+            }
+
+            $.ajax({
+                url: '/products/' + prdNo + '/like',
+                type: 'POST'
+            })
+                .success(function (data) {
+                    if (data.resultCode == 'login') {
+                        openLogin(5, 'afterLikeSrchLogin');
+                        return;
+                    } else if (data.resultCode == 'alread') {
+                        alert("이미 찜 한 상품입니다.");
+                    } else if (data.resultCode == 'success') {
+                        this.likeChange('add');
+                    } else {
+                        alert("다시 시도해 주세요.");
+                    }
+                    this.sendLikeLog();
+                }.bind(this))
+                .error(function () {
+                    console.log(arguments);
+                    alert('서버통신 중 에러가 발생되었습니다.');
+                }.bind(this));
+        },
+
+        //좋아요 취소
+        removeLikeProduct: function (prdNo) {
+            if (!funcCheckIsLogin()) {
+                openLogin(5, "afterLikeSrchLogin");
+                return;
+            }
+
+            $.ajax({
+                url: '/products/' + prdNo + '/delete/like',
+                type: 'POST',
+            })
+                .success(function (data) {
+                    if (data.resultCode == 'success') {
+                        this.likeChange('remove');
+                    }
+                    this.sendLikeLog();
+                }.bind(this))
+                .error(function () {
+                    console.log(arguments);
+                    alert('서버통신 중 에러가 발생되었습니다.');
+                }.bind(this));
+        },
+
+        init: function () {
+            var _this = this;
+
+            //좋아요
+            $('#like-add').on('click', function (e) {
+                e.preventDefault();
+
+                _this.requestLikeProduct();
+                return false;
+            });
+        }
+    };
+
+    return productLike;
+}));

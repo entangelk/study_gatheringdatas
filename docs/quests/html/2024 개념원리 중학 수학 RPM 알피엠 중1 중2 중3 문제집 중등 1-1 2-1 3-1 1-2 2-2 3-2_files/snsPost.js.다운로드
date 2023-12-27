@@ -1,0 +1,100 @@
+/**
+ * @method: helpCommon
+ * @dependency: requireJS, jQuery
+ */
+(function(root, factory) {
+    'use strict';
+    if (typeof define === 'function' && define.amd) {
+        define([
+            'jquery',
+            'kakao'
+        ], factory);
+    } else {
+        root.snsPost = factory(
+            root.jQuery,
+            root.kakao
+        );
+    }
+}(window || this, function($) {
+    'use strict';
+    var prdVar = productPrdInfo;
+    var agent = navigator.userAgent.toLowerCase();
+    var isMSIE = (navigator.appName === 'Netscape' && agent.indexOf('trident') !== -1) || (agent.indexOf("msie") !== -1);
+
+    var snsPost = {
+        facebook : function() {
+            var link = 'http://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent("http://www.11st.co.kr/products/" + prdVar.prdNo + "/share");
+            if (isMSIE) {
+                alert('페이스북 공유하기는 이 브라우저에서 더 이상 지원되지 않습니다. 다른 브라우저를 이용해주세요.');
+            }
+            var popwin = window.open(link);
+            if (popwin) {
+                popwin.focus();
+            }
+        },
+
+        twitter : function() {
+            var title = "[11번가]\r\n" + prdVar.prdNm;
+            var link = 'http://twitter.com/intent/tweet?text=' + encodeURIComponent(title) + "&url=" + encodeURIComponent("http://www.11st.co.kr/products/" + prdVar.prdNo + "/share?snscode=tw&tracking=etc");
+
+            var winSize = "width=1024,height=768";
+            var option = ",scrollbars=yes,status=yes,resizable=yes,toolbar=yes,location=yes,menubar=yes";
+            if (isMSIE) {
+                alert('트위터 공유하기는 이 브라우저에서 더 이상 지원되지 않습니다. 다른 브라우저를 이용해주세요.');
+            }
+            window.open(link, '', winSize + option)
+        },
+
+        kakaostory : function() {
+            Kakao.Story.share({
+                url : "http://www.11st.co.kr/products/" + prdVar.prdNo + "/share",
+                text : "[11번가] "+ prdVar.prdNm + "\r\nhttp://www.11st.co.kr/products/" + prdVar.prdNo + "/share"
+            });
+        },
+
+        copyurl  : function() {
+            var copyText = document.getElementById("prd_url");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999);
+
+            document.execCommand("copy");
+            alert("공유하기 주소가 복사되었습니다.");
+        },
+
+        init : function() {
+
+            var _this = this;
+
+            // 페이스북 공유
+            $('.share_sns .sns_facebook').on('click', function(e) {
+                _this.facebook();
+                rakeLog.sendRakeLog(this, 'click');
+                return false;
+            });
+
+            // 트위터 공유
+            $('.share_sns .sns_twitter').on('click', function(e) {
+                _this.twitter();
+                rakeLog.sendRakeLog(this, 'click');
+                return false;
+            });
+
+            // 카카오스토리 공유
+            Kakao.init('.share_sns .sns_kakao');
+            $('.share_sns .sns_kakao').on('click', function(e) {
+                _this.kakaostory();
+                rakeLog.sendRakeLog(this, 'click');
+                return false;
+            });
+
+            // URL 복사
+            $('.share_form .c_product_btn').on('click', function(e) {
+                _this.copyurl();
+                rakeLog.sendRakeLog(this, 'click');
+                return false;
+            });
+        }
+    };
+
+    return snsPost;
+}));

@@ -1,0 +1,96 @@
+/**
+ * @method: productPrice
+ * @dependency: requireJS, jQuery
+ */
+(function (root, factory) {
+    'use strict';
+    if (typeof define === 'function' && define.amd) {
+        define([
+            'jquery'
+        ], factory);
+    } else {
+        root.productPrice = factory(
+            root.jQuery
+        );
+    }
+}(window || this, function ($) {
+    'use strict';
+    var prdVar = productPrdInfo;
+
+    var todayDeliveryPromotion = {
+
+        init: function () {
+            if (prdVar.todayDeliveryProduct) {
+                this.todayDeliveryTimeSetting(prdVar.todayDeliveryEndTime);
+            }
+        },
+
+        todayDeliveryTimeSetting: function (dealDispEndDy) {
+            function toHHMMSS(sec) {
+                var sec_num = parseInt(sec, 10); // don't forget the second param
+                var hours = Math.floor(sec_num / 3600);
+                var minutes = Math.floor((sec_num - (hours * 3600)) / 60);
+                var seconds = sec_num - (hours * 3600) - (minutes * 60);
+
+                if (hours < 10) {
+                    hours = "0" + hours;
+                }
+                if (minutes < 10) {
+                    minutes = "0" + minutes;
+                }
+                if (seconds < 10) {
+                    seconds = "0" + seconds;
+                }
+                return hours + ':' + minutes + ':' + seconds;
+            }
+
+            function toKoreanHHMMSS(sec) {
+                var sec_num = parseInt(sec, 10); // don't forget the second param
+                var hours = Math.floor(sec_num / 3600);
+                var minutes = Math.floor((sec_num - (hours * 3600)) / 60);
+                var seconds = sec_num - (hours * 3600) - (minutes * 60);
+
+                if (hours < 10) {
+                    hours = "0" + hours;
+                }
+                if (minutes < 10) {
+                    minutes = "0" + minutes;
+                }
+                if (seconds < 10) {
+                    seconds = "0" + seconds;
+                }
+                return "남은 시간 " + hour + "시간 " + minutes + "분 " + seconds + "초";
+            }
+
+            var todayDeliveryPromotionEndTime = dealDispEndDy;
+            var year = todayDeliveryPromotionEndTime.substring(0, 4),
+                month = todayDeliveryPromotionEndTime.substring(4, 6) - 1,
+                day = todayDeliveryPromotionEndTime.substring(6, 8),
+                hour = todayDeliveryPromotionEndTime.substring(8, 10),
+                min = todayDeliveryPromotionEndTime.substring(10, 12),
+                sec = todayDeliveryPromotionEndTime.substring(12);
+
+            var endDateTime = new Date(year, month, day, hour, min, sec);
+            var endTimestamp = endDateTime.getTime();
+            var leftTime = 0;
+
+            if (todayDeliveryPromotionEndTime) {
+                var refreshLeftTime = setInterval(function () {
+                    leftTime = (endTimestamp - new Date().getTime()) / 1000;
+
+                    if (leftTime < 0) {
+                        leftTime = 0;
+                        clearInterval(refreshLeftTime);
+                        alert('오늘주문/오늘도착 프로모션이 종료되었습니다.');
+                        location.reload();
+                    }
+                    var leftTimeString = toHHMMSS(leftTime);
+                    $('#todayDeliveryRemainTime').attr('aria-label', toKoreanHHMMSS(leftTime));
+                    $('#todayDeliveryRemainTime').html(leftTimeString);
+                }, 1000);
+            }
+        }
+    };
+
+    return todayDeliveryPromotion;
+}));

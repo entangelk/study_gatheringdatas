@@ -1,0 +1,234 @@
+let reviewLog = {
+    init: function () {
+        reviewLog.scrollImpressLog();
+    },
+    scrollImpressLog: function () {
+        $(window).scroll(_.debounce(function () {
+            let currentScrollTop = $(window).scrollTop();
+            let currentScrollBottom = currentScrollTop + $(window).innerHeight();
+
+            let isRetailInputTag = document.getElementById("isRetailProduct");
+
+            if (isRetailInputTag && isRetailInputTag.value == 'true') {
+                //impression log lists for retail products.
+                retailReviewLog.movieAndPhotoSectionImpression(currentScrollTop, currentScrollBottom);
+                retailReviewLog.reviewListImpression(currentScrollTop, currentScrollBottom);
+                retailReviewLog.reviewAdImpression(currentScrollTop, currentScrollBottom);
+                retailReviewLog.reviewSortBtnImpression(currentScrollTop, currentScrollBottom);
+            }
+            else {
+                //impression log lists..
+                reviewLog.reviewAdImpression(currentScrollTop, currentScrollBottom);
+                reviewLog.metaBannerImpression(currentScrollTop, currentScrollBottom);
+                reviewLog.reviewListImpression(currentScrollTop, currentScrollBottom);
+                reviewLog.reviewImageThumbnailImpression(currentScrollTop, currentScrollBottom);
+                reviewLog.movieAndPhotoSectionImpression(currentScrollTop, currentScrollBottom);
+            }
+        }, 250));
+    },
+    sendImpressionLog: function (element) {
+        if (rakeLog) {
+            rakeLog.sendRakeLog(element, 'impression');
+        }
+    },
+
+    sendAdLog: function (adLogUrl) {
+        fetch(adLogUrl, {
+            method: 'GET',
+        });
+    },
+
+    reviewAdImpression: function (currentScrollTop, currentScrollBottom) {
+        let targetElem = $('#ifrmReview').contents().find('.reviewAdImpression');
+        targetElem.each(function (idx, element) {
+            let targetElemTop = $('#ifrmReview').offset().top + $(element).offset().top;
+            var targetLogSended = $(element).attr('data-sended');
+            var isImpression = $(element).attr('data-impression')
+            if (targetLogSended === 'N' && isImpression === "false" &&
+                targetElemTop > currentScrollTop && targetElemTop < currentScrollBottom) {
+                console.log("init impression");
+                $(element).attr('data-sended', 'Y');
+                var impressionUrl = $(element).attr('data-impression-url');
+                reviewLog.sendImpressionLog(element);
+                reviewLog.sendAdLog(impressionUrl);
+            }
+        });
+    },
+
+    metaBannerImpression: function (currentScrollTop, currentScrollBottom) {
+        let targetElem = $('#ifrmReview').contents().find('.metaBannerImpression');
+        targetElem.each(function (idx, element) {
+            let targetElemTop = $('#ifrmReview').offset().top + $(element).offset().top;
+            var targetLogSended = $(element).attr('data-sended');
+            if (targetLogSended === 'N' &&
+                targetElemTop > currentScrollTop && targetElemTop < currentScrollBottom) {
+                $(element).attr('data-sended', 'Y');
+                reviewLog.sendImpressionLog(element);
+            }
+        });
+    },
+
+    reviewListImpression : function(scrollTop, scrollBottom) {
+
+        let targetElem = $('#ifrmReview').contents().find('.review_list_element');
+        targetElem.each(function(idx, element) {
+            let elementPositionTop = $('#ifrmReview').offset().top + $(element).offset().top;
+            let elementLogSended = $(element).attr('data-sended');
+            let elementContMapNo = $(element).attr('data-contmapno');
+
+            if (elementLogSended === 'N' &&
+                elementPositionTop > scrollTop && elementPositionTop < scrollBottom) {
+
+                let prdNo = $(element).attr('data-productNo');
+                let mediaReviewClfCd = $(element).attr('data-mediaReviewClfCd');
+                let mediaReviewClfNm = ['03', '04'].includes(mediaReviewClfCd) ? 'movie'
+                    : ['02'].includes(mediaReviewClfCd) ? 'image'
+                        : 'text';
+
+                //create log body (for index. mustache cannot create index.)
+                $(element).attr('data-log-actionid-area', 'review');
+                $(element).attr('data-log-actionid-label', 'review_imp');
+                $(element).attr('data-log-body', "{" +
+                    "'current_product_no' : '" + prdNo + "', " +
+                    "'send_impression':'Y'," +
+                    "'label_type' : '" + mediaReviewClfNm + "'," +
+                    "'rank_no' : '" + (idx + 1) + "'," +
+                    "'custom_yn' : '" + $(element).attr('data-existReplyYn') + "'}");
+                $(element).attr('data-sended', 'Y');
+                reviewLog.sendImpressionLog(element);
+
+                //DO NOT DELETE. prevent duplicate log sending.
+                $(element).removeAttr('data-log-actionid-area');
+                $(element).removeAttr('data-log-actionid-label');
+            }
+        });
+    },
+
+    reviewImageThumbnailImpression : function(scrollTop, scrollBottom) {
+
+        let targetElem = $('#ifrmReview').contents().find('.c_product_review_thumbnail2');
+        targetElem.each(function (idx, element) {
+            let elementPositionTop = $('#ifrmReview').offset().top + $(element).offset().top;
+            let elementLogSended = $(element).attr('data-sended');
+            if (elementLogSended === 'N' &&
+                elementPositionTop > scrollTop && elementPositionTop < scrollBottom) {
+                let prdNo = $(element).attr('data-productNo');
+                //create log body (for index. mustache cannot create index.)
+                $(element).attr('data-log-body', "{" +
+                    "'current_product_no' : '" + prdNo + "', " +
+                    "'send_impression':'Y'" +
+                    "}" );
+                $(element).attr('data-sended', 'Y');
+                reviewLog.sendImpressionLog(element);
+            }
+        });
+    },
+
+    movieAndPhotoSectionImpression : function(scrollTop, scrollBottom) {
+        let targetElem = $('#ifrmReview').contents().find('#summary-box');
+        targetElem.each(function (idx, element) {
+            let elementPositionTop = $('#ifrmReview').offset().top + $(element).offset().top;
+            let elementLogSended = $(element).attr('data-sended');
+            if (elementLogSended === 'N' &&
+                elementPositionTop > scrollTop && elementPositionTop < scrollBottom) {
+                let prdNo = $(element).attr('data-productNo');
+
+                let labelType = 'image';
+                if (element.children[0].classList.contains('item_video_play') ||
+                    element.children[0].classList.contains('item_video')) {
+                    labelType = 'movie';
+                }
+                $(element).attr('data-log-body', "{" +
+                    "'current_product_no' : '" + prdNo + "', " +
+                    "'send_impression':'Y'" + ", " +
+                    "'label_type' : '" + labelType + "'" +
+                    "}");
+                $(element).attr('data-sended', 'Y');
+                reviewLog.sendImpressionLog(element);
+            }
+        });
+
+    },
+};
+
+reviewLog.init();
+
+let retailReviewLog = {
+    movieAndPhotoSectionImpression : function(scrollTop, scrollBottom) {
+        let targetElem = $('#ifrmReview').contents().find('#summary-box');
+        targetElem.each(function (idx, element) {
+            let elementPositionTop = $('#ifrmReview').offset().top + $(element).offset().top;
+            let elementLogSended = $(element).attr('data-sended');
+            if (elementLogSended === 'N' &&
+                elementPositionTop > scrollTop && elementPositionTop < scrollBottom) {
+                reviewLog.sendImpressionLog(element);
+            }
+        });
+    },
+
+    reviewListImpression : function(scrollTop, scrollBottom) {
+
+        let targetElem = $('#ifrmReview').contents().find('.review_list_element');
+        targetElem.each(function(idx, element) {
+            let elementPositionTop = $('#ifrmReview').offset().top + $(element).offset().top;
+            let elementLogSended = $(element).attr('data-sended');
+            let elementContMapNo = $(element).attr('data-contmapno');
+
+            if (elementLogSended === 'N' &&
+                elementPositionTop > scrollTop && elementPositionTop < scrollBottom) {
+
+                let prdNo = $(element).attr('data-productNo');
+                let mediaReviewClfCd = $(element).attr('data-mediaReviewClfCd');
+                let mediaReviewClfNm = ['03', '04'].includes(mediaReviewClfCd) ? 'movie'
+                    : ['02'].includes(mediaReviewClfCd) ? 'image'
+                        : 'text';
+
+                //create log body (for index. mustache cannot create index.)
+                $(element).attr('data-log-actionid-area', 'review');
+                $(element).attr('data-log-actionid-label', 'review_imp');
+                $(element).attr('data-log-body', '{' +
+                    '"current_product_no" : "' + prdNo + '", ' +
+                    '"first_view_product_no" : "' + prdNo + '", ' +
+                    '"send_impression": "Y",' +
+                    '"label_type" : "' + mediaReviewClfNm + '",' +
+                    '"rank_no" : "' + (idx + 1) + '",' +
+                    '"custom_yn" : "' + $(element).attr('data-existReplyYn') + '"}');
+                $(element).attr('data-sended', 'Y');
+                reviewLog.sendImpressionLog(element);
+
+                //DO NOT DELETE. prevent duplicate log sending.
+                $(element).removeAttr('data-log-actionid-area');
+                $(element).removeAttr('data-log-actionid-label');
+            }
+        });
+    },
+
+    reviewAdImpression: function (currentScrollTop, currentScrollBottom) {
+        let targetElem = $('#ifrmReview').contents().find('.reviewAdImpression');
+        targetElem.each(function (idx, element) {
+            let targetElemTop = $('#ifrmReview').offset().top + $(element).offset().top;
+            var targetLogSended = $(element).attr('data-sended');
+            var isImpression = $(element).attr('data-impression')
+            if (targetLogSended === 'N' && isImpression === "false" &&
+                targetElemTop > currentScrollTop && targetElemTop < currentScrollBottom) {
+                console.log("init impression");
+                $(element).attr('data-sended', 'Y');
+                var impressionUrl = $(element).attr('data-impression-url');
+                reviewLog.sendImpressionLog(element);
+                reviewLog.sendAdLog(impressionUrl);
+            }
+        });
+    },
+    reviewSortBtnImpression: function (currentScrollTop, currentScrollBottom) {
+        let targetElem = $('#ifrmReview').contents().find('button[name=sortTypeButton]');
+        targetElem.each(function (idx, element) {
+            let targetElemTop = $('#ifrmReview').offset().top + $(element).offset().top;
+            var targetLogSended = $(element).attr('data-log-sended');
+            if (targetLogSended === 'N' &&
+                targetElemTop > currentScrollTop && targetElemTop < currentScrollBottom) {
+                $(element).attr('data-log-sended', 'Y');
+                reviewLog.sendImpressionLog(element);
+            }
+        });
+    },
+};

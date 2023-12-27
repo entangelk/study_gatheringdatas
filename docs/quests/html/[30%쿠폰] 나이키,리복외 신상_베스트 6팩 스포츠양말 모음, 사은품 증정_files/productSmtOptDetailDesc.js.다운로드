@@ -1,0 +1,50 @@
+/**
+ * @method: productSmtOptDetailDesc.js
+ * @dependency: requireJS, jQuery, prdVar
+ */
+(function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define([
+            'jquery',
+            'productCommon'
+        ], factory);
+    } else {
+        root.productSmtOptDetailDesc = factory(
+            root.jQuery,
+            root.productCommon
+        );
+    }
+}(window || this, function ($, productCommon) {
+    'use strict';
+
+    return {
+        init: function () {
+            var _this = this;
+
+            parent.callEventFromIfram('layoutUpdate'); //상품 이미지 로딩이 다 되고난후 layoutUpdate
+
+            $('.optImg .btn_opt').click(function () {
+                var smtOptVal = {};
+                smtOptVal.optItemNo = $(this).attr("data-optItemNo");
+                smtOptVal.optValueNo = $(this).attr("data-optValueNo");
+
+                _this.fnSmtSelect(smtOptVal);
+            });
+
+            $('#optlyAddOptionID', parent.document).click(function () {
+                var smtOptVal = {};
+                smtOptVal.optItemNo = $('.optlyTitleNameID option:selected', parent.document).attr("data-optItemNo");
+                smtOptVal.optValueNo = $('.optlyTitleNameID', parent.document).val();
+
+                _this.fnSmtSelect(smtOptVal);
+            });
+
+            productCommon.layerPopupCommon();
+
+        },
+
+        fnSmtSelect: function (smtOptVal) {
+            parent.callEventFromIfram('selectedSmartOption', smtOptVal);
+        }
+    };
+}));

@@ -1,0 +1,18 @@
+'use strict';
+require.config({
+    baseUrl: '/js',
+    paths: {
+        'jquery': 'lib/jquery/jquery-1.12.4.min',
+        'productSmtOptDetailDesc': 'product/productSmtOptDetailDesc',
+        'productCommon': 'product/productCommon'
+    }
+});
+
+require([
+    'jquery',
+    'productCommon'
+], function () {
+    require(['productSmtOptDetailDesc'], function (productSmtOptDetailDesc) {
+        productSmtOptDetailDesc.init();
+    });
+});

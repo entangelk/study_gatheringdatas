@@ -1,0 +1,60 @@
+(function (root, factory) {
+    'use strict';
+    if (typeof define === 'function' && define.amd) {
+        define([
+            'jquery',
+            'productCommon'
+        ], factory);
+    } else {
+        root.customer = factory(
+            root.jQuery,
+            root.productCommon
+        );
+    }
+}(window || this, function ($, productCommon) {
+    'use strict';
+    var sellerTabInfo = {
+        init: function () {
+            this.setProvisionNoticeHtml();
+            this.bindEvent();
+        },
+        setProvisionNoticeHtml: function () {
+            return $.ajax({
+                url: "/products/spec/provision/" + productPrdInfo.prdNo || 0,
+                dataType: 'text',
+                contentType: 'text/html; charset=UTF-8'
+            })
+                .done(function (data) {
+                    $("#provisionNotice").replaceWith(data);
+                }
+                    .bind(this))
+                .fail(function (request, status, error) {
+                });
+        },
+        bindEvent: function () {
+
+            $("#fast_whrereRrturn").click(function () {
+                $(this).attr('aria-expanded', 'true');
+                $('#fast_whrereRrturn_popup').toggle();
+            });
+            $("#whrereRrturn").click(function () {
+                $(this).attr('aria-expanded', 'true');
+                $('#whrereRrturn_popup').toggle();
+            });
+            $("#whereChange").click(function () {
+                $(this).attr('aria-expanded', 'true');
+                $('#whereChange_popup').toggle();
+            });
+
+            $('.btn_laycls').click(function () {
+                $(this).parents('li').find('button').attr('aria-expanded', 'false');
+                $(this).parents('.lay_return').css('display', 'none');
+            });
+
+            $("#quickReturnAppointmentPopup, #returnAppointmentPopup, #changeAppointmentPopup").click(function () {
+                productCommon.openPopup("https://buy.11st.co.kr/order/popAppmtGuide.tmall", 510, 750);
+            });
+        }
+    };
+    return sellerTabInfo;
+}));

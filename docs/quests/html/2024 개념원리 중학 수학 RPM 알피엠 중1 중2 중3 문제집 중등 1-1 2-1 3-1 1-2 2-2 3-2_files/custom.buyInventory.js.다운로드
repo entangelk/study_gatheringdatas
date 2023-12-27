@@ -1,0 +1,141 @@
+;(function (root, factory) {
+    'use strict';
+    if (typeof define === 'function' && define.amd) {   // jshint ignore:line
+        // AMD
+        define([                                            // jshint ignore:line
+            'jquery'
+        ], factory);
+    } else {
+        // Browser globals
+        root.skp11 = root.skp11 || {};
+        root.skp11.product = root.skp11.product || {};
+        root.skp11.product.CustomAddPrdBot = factory(
+            root.jQuery
+        );
+    }
+}(this, function ($) {
+    'use strict';
+    var CustomBuyInventory;
+
+    CustomBuyInventory = function () {
+        // 사용되는 객체
+        this.$s_product = $('.s_product');
+        this.$l_product_buy_wrap = this.$s_product.find('.l_product_buy_wrap');
+        this.$l_product_buy_list = this.$l_product_buy_wrap.find('.l_product_buy_list');
+    };
+
+    CustomBuyInventory.prototype.init = function () {
+        var _this = this;
+
+        _this.bind();
+
+        if (!productPrdInfo.isStandardPrd) {
+            $('#buyList').children().first().children().addClass('active');
+        }
+
+        $('#nonLogin_mart_buyInventory').on('click', function () {
+            openLogin(1);
+        });
+    };
+
+    // 이벤트 바인드
+    CustomBuyInventory.prototype.bind = function () {
+        var prdVar = productPrdInfo;
+
+        var $buyList = $('#buyList');
+        var _openClass = 'active';
+        $buyList.on('click', function (e) {
+            var $target = $(e.target);
+            if (!$target.hasClass('c_product_btn_select')) {
+                var _targetDropdown = $target.parents('.c_product_dropdown_style1');
+                $buyList.find('.c_product_dropdown_style1').each(function () {
+                    if (_targetDropdown[0] !== this) {
+                        $(this).removeClass(_openClass);
+                    }
+                });
+            }
+        });
+
+        var $freePackage = $('#freePackage');
+        var $freePackageCheckboxes = $freePackage.find('[name=freePackageCode]');
+        $freePackage.on('click', function (e) {
+            if (e.target.type === 'checkbox') {
+                e.stopPropagation();
+                $freePackageCheckboxes.each(function () {
+                    if (e.target !== this) {
+                        $(this).prop("checked", false);
+                    }
+                });
+            }
+        });
+
+        $('#btn_buy_sktpass').on('click', function (e) {
+            e.preventDefault();
+            $('.c_product_buy_sktpass').hide();
+        });
+
+        $('#memberBuyButton').on('click', function(e) {
+            window.location.href = prdVar.universeUrl+"/join?tr=pdp&rurl="+encodeURIComponent("https://www.11st.co.kr/products/"+prdVar.prdNo);
+        });
+
+
+        if (prdVar.showDualPrice === true) {
+            var radioMemPrice = $('input:radio[name="radio_price_membership"]');
+            var radioNonMemPrice = $('input:radio[name="radio_price_non_membership"]');
+            var dlMemPrice = $('#dl_price_membership');
+            var dlNonMemPrice = $('#dl_price_non_membership');
+
+            if (radioMemPrice != null
+                && radioNonMemPrice != null
+                && dlMemPrice != null
+                && dlNonMemPrice != null) {
+
+                radioMemPrice.click(function () {
+                    if (radioMemPrice.is(":checked") === true) {
+                        radioNonMemPrice.prop("checked", false);
+                        $('#benefit_cpn_area').hide();
+                        $('#benefit_cpn_membership_area').show();
+                    }
+                    if (!prdVar.isUniverseFamilyOwner) {
+                        var divOrderBtnArea = $('#divOrderBtnArea');
+                        divOrderBtnArea.hide();
+                        divOrderBtnArea.removeClass('sktpass_nonmember');
+                        $('#divMembershipJoinBtnArea').show();
+                    }
+                });
+
+                radioNonMemPrice.click(function () {
+                    if (radioNonMemPrice.is(":checked") === true) {
+                        radioMemPrice.prop("checked", false);
+                        $('#benefit_cpn_area').show();
+                        $('#benefit_cpn_membership_area').hide();
+                    }
+                    if (!prdVar.isUniverseFamilyOwner) {
+                        var divOrderBtnArea = $('#divOrderBtnArea');
+                        divOrderBtnArea.show();
+                        divOrderBtnArea.addClass('sktpass_nonmember');
+                        $('#divMembershipJoinBtnArea').hide();
+                    }
+                });
+
+                if (prdVar.isUniverseFamilyOwner) {
+                    radioMemPrice.prop("checked", true);
+                    radioMemPrice.removeAttr("disabled");
+                    radioNonMemPrice.prop("disabled", true);
+                    radioNonMemPrice.removeAttr("checked");
+                    dlMemPrice.removeClass("disabled");
+                    dlNonMemPrice.addClass("disabled");
+                } else {
+                    radioMemPrice.prop("disabled", false);
+                    radioMemPrice.removeAttr("checked");
+                    radioNonMemPrice.prop("checked", true);
+                    radioNonMemPrice.removeAttr("disabled");
+                    dlMemPrice.removeClass("disabled");
+                    dlNonMemPrice.removeClass("disabled");
+                }
+            }
+        }
+    };
+
+    return CustomBuyInventory;
+}));

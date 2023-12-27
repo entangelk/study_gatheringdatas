@@ -1,0 +1,94 @@
+/**
+ * @method: productPrice
+ * @dependency: requireJS, jQuery
+ */
+(function(root, factory) {
+    'use strict';
+    if (typeof define === 'function' && define.amd) {
+        define([
+            'jquery'
+        ], factory);
+    } else {
+        root.productPrice = factory(
+            root.jQuery
+        );
+    }
+}(window || this, function($) {
+    'use strict';
+    var prdVar = productPrdInfo;
+
+    var productDeal = {
+
+        init : function() {
+            if (prdVar.isShockingDeal) {
+                this.shockTime(prdVar.dealEndTime);
+            }
+        },
+
+        timerId : null,
+
+        shockTime : function(dealDispEndDy) {
+            var now = new Date();
+
+            if (prdVar.isTimeDeal) {
+                var timeDealProductEndTime = dealDispEndDy;
+                var year = timeDealProductEndTime.substring(0,4),
+                    month = timeDealProductEndTime.substring(4,6)-1,
+                    day = timeDealProductEndTime.substring(6,8),
+                    hour = timeDealProductEndTime.substring(8,10),
+                    min = timeDealProductEndTime.substring(10,12),
+                    sec = timeDealProductEndTime.substring(12);
+
+                var dday = new Date(year, month, day, hour, min, sec);
+            } else {
+                var dday = new Date(dealDispEndDy);
+            }
+
+            var days = (dday - now) / 1000 / 60 / 60 / 24;
+            var daysRound = Math.floor(days);
+            var hours = (dday - now) / 1000 / 60 / 60 - (24 * daysRound);
+            var hoursRound = Math.floor(hours);
+            var minutes = (dday - now) / 1000 / 60 - (24 * 60 * daysRound) - (60 * hoursRound);
+            var minutesRound = Math.floor(minutes);
+            var seconds = (dday - now) / 1000 - (24 * 60 * 60 * daysRound) - (60 * 60 * hoursRound) - (60 * minutesRound);
+            var secondsRound = Math.round(seconds);
+
+            var $target = $('.c_product_info_deal').find('.period');
+            if(daysRound > 0) {
+                daysRound = "<i>" + daysRound + "</i>" + "일 "
+                    + "<i>" + hoursRound + "</i>" + "시간 남음";
+                $target.html(daysRound);
+            } else {
+                if(dday - now <= 0) {
+                    if(!this.timerId) return;
+
+                    clearInterval(this.timerId);
+                    this.timerId = null;
+
+                    alert(prdVar.endAlertText);
+                    location.reload();
+                } else {
+                    var timeText = "<span class=\"text_num\">" +
+                        (hoursRound < 10 ? "0" + hoursRound : hoursRound) +
+                        ":" + (minutesRound < 10 ? "0" + minutesRound : minutesRound) +
+                        ":" + (secondsRound < 10 ? "0" + secondsRound : secondsRound) +
+                        "</span>";
+
+                    if (hoursRound == 0 && minutesRound == 0 && secondsRound == 0) {
+                        $target.html("종료");
+                    } else {
+                        $target.html(timeText);
+                    }
+
+                    if (!this.timerId) {
+                        this.timerId = setInterval(function () {
+                            productDeal.shockTime(dealDispEndDy);
+                        }, 200);
+                    }
+                }
+            }
+        }
+    };
+
+    return productDeal;
+}));

@@ -1,0 +1,36 @@
+(function (root, factory) {
+    'use strict';
+    if (typeof define === 'function' && define.amd) {
+        define([
+            'jquery',
+            'productCommon'
+        ], factory);
+    } else {
+        root.customer = factory(
+            root.jQuery,
+            root.productCommon
+        );
+    }
+}(window || this, function ($, productCommon) {
+    'use strict';
+
+    var prdVar = productPrdInfo;
+
+    var ocr = {
+        init: function () {
+            this.bindEvent();
+        },
+        bindEvent: function () {
+            $("#btn_voice_open").click(function (e) {
+                e.preventDefault();
+
+                var url = '/products/' + prdVar.prdNo + '/view-ocr';
+                productCommon.launchCenter(url, "resultView", 1050, 800, 1);
+
+                var targetHeight = $("#provisionNotice").offset().top - 200;
+                $('html, body').animate({'scrollTop' : targetHeight});
+            });
+        }
+    };
+    return ocr;
+}));

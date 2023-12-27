@@ -1,0 +1,551 @@
+/**
+ * @method: Product Qna - productQna
+ * @dependency: requireJS, jQuery, prdVar
+ */
+(function(root, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define([
+            'jquery',
+            'prdVar'
+        ], factory);
+    } else {
+        root.productQna = factory(
+            root.jQuery,
+            root.prdVar
+        );
+    }
+}(window || this, function($, prdVar) {
+    'use strict';
+    var login_targetUrl = "//www.11st.co.kr/products/";
+    var productQna = {
+
+        init : function() {
+            var _this = this;
+            prevIdx :0
+
+            try{
+                _this.resizeParent();
+                _this.callEventIfrm('layoutUpdate');
+
+                if(!prdVar.isMart){
+                    $("#selQnaDtlsCd").change(function(){
+                        _this.searchOption(this.value, "qnaDtlsCd");
+                    });
+
+                    $("#chkQnADtlsSecret").change(function(){
+                        _this.searchOption($(this).is(":checked") ?"Y":"N", "secretYn");
+                    });
+
+                    $("#chkQnADtlsMyQna").change(function(){
+                        _this.searchOption($(this).is(":checked") ?"Y":"N", "myQnaYn");
+                    });
+                }
+                if(prdVar.isMart == "true" && (prdVar.qnaDtlsCd != "" || prdVar.qnaList != "")){
+                    try {
+
+                        var $html = jQuery("html");
+
+                        if(jQuery.browser.version=="6.0"){
+                            $html.removeClass("fiexible_resize");
+                        }else{
+
+                            var adjustSize = function(){
+                                var isFlexible = true, lastB = true, tmp;
+                                var _class = $html.attr("class");
+                                if(jQuery(window).width() > 1220){
+                                    if(_class === ""){
+                                        $html.addClass("fiexible_resize");
+                                    }
+                                } else {
+                                    if(_class !== ""){
+                                        $html.removeClass("fiexible_resize");
+                                    }
+                                };
+                            }
+
+                            adjustSize();
+
+                            jQuery(window).bind("resize", function(){
+                                adjustSize();
+                            });
+                        }
+                    } catch(e) { }
+                }
+                if(prdVar.targetFrm != undefined && prdVar.targetFrm != '') {
+                    $('.txt_ellipsis').css('width', '350px');	// 표준상품 상세보기 전용
+                }
+            }catch(e){}
+
+            $('.txt_ellipsis').click(function(e) {
+                e.preventDefault();
+                var $evtElem = $(this);
+                var idx = $evtElem.attr("data-index");
+                var brdInfoNo = $evtElem.attr("data-brdInfoNo");
+                var subInfoNo = $evtElem.attr("data-subInfoNo");
+                try{
+                    if($("#trQnqContDtl"+idx).css("display") == "none"){
+                        _this.showDetail(idx, brdInfoNo, subInfoNo);
+                        $evtElem.attr("aria-expanded", "true");
+                    }
+                    else{
+                        _this.closeDetail(idx);
+                        $evtElem.attr("aria-expanded", "false");
+                    }
+                    _this.prevIdx = idx;
+                } catch (e) {
+                    // alert(e.message)
+                }
+            });
+
+            $('#write').click(function(e) {
+                if ($("input[name=brdInfoClfNo]").val().length == 0) return;
+
+                if (funcCheckIsLogin()){
+                    if(prdVar.isSnsMember == 'true' && prdVar.noMailMem == 'Y') {
+                        alert('이메일 주소가 없어, 상품 Q&A등록이 불가능합니다.\n고객센터로 문의해주세요 (1599-0110)');
+                    } else {
+                        var _win = window.open(prdVar.writeUrl + window.location.host, "prdQnAPopup","scrollbars=yes, toolbar=no, resizable=no, location=no, directories=no, menubar=no, width=670, height=640");
+                        _win.focus();
+                    }
+                } else {
+                    var targetUrl = login_targetUrl + prdVar.prdNo + "?prdNo=" + prdVar.prdNo;
+                    productQna.sendEventMessage('loginFunc', targetUrl);
+                }
+            });
+
+            $('.updateQna').click(function(e) {
+                var $evtElem = $(this);
+                var contNo = $evtElem.attr("data-brdInfoNo");
+                _this.updQna(contNo);
+            });
+
+            $('.deleteQna').click(function(e) {
+                var $evtElem = $(this);
+                var contNo	   		= $evtElem.attr("data-brdInfoNo");
+                var hgrnContNo 	= $evtElem.attr("data-hgrnkBrdInfoNo");
+                var memNo 	   	= $evtElem.attr("data-memberNumber");
+                var subInfoNo  	= $evtElem.attr("data-subInfoNo");
+                _this.delQna(contNo, hgrnContNo, memNo , subInfoNo);
+            });
+
+            $('.replyQna').click(function(e) {
+                var $evtElem = $(this);
+                var idx		 = $evtElem.attr("data-index");
+
+                _this.reply(idx);
+            });
+
+            $('.cancel').click(function(e) {
+                var $evtElem = $(this);
+                var idx		 = $evtElem.attr("data-index");
+
+                _this.cancelRepl(idx);
+            });
+
+            $('.confirm').click(function(e) {
+                var $evtElem = $(this);
+                var idx		 = $evtElem.attr("data-index");
+                var contNo	 = $evtElem.attr("data-brdInfoNo");
+
+                _this.addRepl(idx, contNo);
+            });
+
+            $('#faqCenter').click(function(e) {
+                var url = "https://cs.11st.co.kr/page/customer";
+                window.open(url, "_blank");
+            });
+
+            $('#qnaNotice1, #qnaNotice2, #qnaNotice3').on('click', function(e) {
+                var productNo = $("input[name=brdInfoClfNo]").val();
+                var url = "http://www.11st.co.kr/products/" + productNo + "?method=qnaNotice&prdNo=" + $("input[name=brdInfoClfNo]").val();
+                var _win = window.open(url, "prdQnAPopup","scrollbars=no, toolbar=no, resizable=no, location=no, directories=no, menubar=no, width=650, height=640");
+                _win.focus();
+            });
+
+            $('.s_paging_v2 #paging_prev').click(function(e) {
+                _this.processGoPage(e, $(this));
+            });
+
+            $('.s_paging_v2 #paging_page').click(function(e) {
+                _this.processGoPage(e, $(this));
+            });
+
+            $('.s_paging_v2 #paging_next').click(function(e) {
+                _this.processGoPage(e, $(this));
+            });
+
+            $('.btn_action #report').click(function(e) {
+                var $evtElem = $(this);
+                var contNo = $evtElem.attr("data-brdInfoNo");
+                var clfCd = $evtElem.attr("data-clfCd");
+                var contCd = $evtElem.attr("data-contCd");
+
+                _this.fnReportContent(contNo, clfCd, contCd);
+            });
+
+        },
+        showDetail : function(idx, brdInfoNo, subInfoNo){
+            try{
+                $(".trQna").css("display", "none");
+                $(".qna_expand").css("display", "none");
+                $("#trQnqContDtl"+idx).css("display", "table-row");
+                $("#dvQnqContDtl"+idx).css("display", "table-cell");
+                $(".txt_ellipsis").attr("aria-expanded", "false");
+                this.resizeParent();
+                if(this.prevIdx != idx){
+                    // 조회수 증가
+                    this.upReadCnt(brdInfoNo);
+                    if (subInfoNo > 0) 	this.upReadCnt(subInfoNo);
+                }
+            } catch (e) {
+                // alert(e.message)
+            }
+        }, closeDetail : function(idx){
+            try{
+                $("#trQnqContDtl"+idx).css("display", "none");
+                $("#dvQnqContDtl"+idx).css("display", "none");
+
+                this.resizeParent();
+            } catch (e) {
+                // alert(e.message)
+            }
+        }
+        , upReadCnt : function(brdInfoNo){	// 문의글 조회수 증가
+            productQna.callAjaxAsynch("/product/UnityBoardAction.tmall"
+                , "method=updatePrdQnaCnt&brdInfoNo=" + brdInfoNo
+                , function(returnVal){
+                    if (returnVal == "FAIL") {
+                        alert("조회수 증가에 실패하였습니다.");
+                    }
+                });
+        }
+        , write : function(){	// QnA작성
+            try{
+                if ($("input[name=brdInfoClfNo]").val().length == 0) return;
+
+                if (funcCheckIsLogin()){
+                    var url = '<c:url value="https://www.11st.co.kr/product/ProductQnaForm.tmall?method=insertProductQnAForm&isSSL=Y&hostUrl='+window.location.host+'&prdNo=" />' + $("input[name=brdInfoClfNo]").val();
+                    var _win = window.open(url, "prdQnAPopup","scrollbars=no, toolbar=no, resizable=no, location=no, directories=no, menubar=no, width=650");
+                    _win.focus();
+                } else {
+                    var targetUrl = login_targetUrl + prdVar.prdNo + "?prdNo=" + prdVar.prdNo;
+                    productQna.sendEventMessage('loginFunc', targetUrl);
+                }
+            } catch (e) {
+                //alert(e.message)
+            }
+        },
+        callEventIfrm: function(eventNm) {
+            var isIE9 = (navigator.userAgent.toLowerCase().indexOf("msie 9") !== -1);
+
+            if (isIE9) {
+                var params = {
+                    "qna" : true,
+                    "eventNm": eventNm
+                };
+                window.parent.postMessage(JSON.stringify(params), "*");
+            } else {
+                window.parent.postMessage({
+                    qna : true,
+                    eventNm : eventNm
+                }, "*");
+            }
+        }
+        , updQna : function(contNo){	// qna 수정
+            try{
+                //if ($("input[name=sellerMemId]").val().length == 0) return;
+
+                if (funcCheckIsLogin()){
+                    var url = 'https://www.11st.co.kr/product/ProductQnaForm.tmall?method=updateProductQnAForm'
+                        + "&prdNo="	+ $("input[name=brdInfoClfNo]").val()
+                        + "&brdInfoNo=" + contNo
+                        + "&isSSL=Y"
+                        + "&curKeyNo=" + $("input[name=keyNo]").val()
+                        + "&pageList=" + $("input[name=pageList]").val()
+                        + "&curPage=" + $("input[name=curPage]").val()
+                        + "&hostUrl=" + window.location.host;
+                    var _win = window.open(url, "prdQnaPopup", "scrollbars=yes, toolbar=no, resizable=no, location=no, directories=no, menubar=no, width=670, height=640");
+                    _win.focus();
+                } else {
+                    var targetUrl = login_targetUrl + prdVar.prdNo + "?prdNo=" + prdVar.prdNo;
+                    productQna.sendEventMessage('loginFunc', targetUrl);
+                }
+            } catch (e) {
+                //alert(e.message)
+            }
+        }
+        , delQna : function(contNo, hgrnContNo, memNo, subInfoNo){	// qna 삭제
+            try {
+                var comfirmMsg = "삭제하시겠습니까?";
+                var param = {brdInfoClfNo : $("input[name=brdInfoClfNo]").val()
+                    , prdNo : $("input[name=brdInfoClfNo]").val()
+                    , brdInfoNo : contNo
+                    , hgrnkBrdInfoNo : hgrnContNo
+                    , flag : "prdQna"
+                    , curPage : 1};
+
+                if(subInfoNo != undefined && subInfoNo != "" && subInfoNo != "0"){
+                    comfirmMsg = "문의와 답변 모두 삭제됩니다. 삭제하시겠습니까?";
+                    param.subInfoNo = subInfoNo;
+                }
+                if (!confirm(comfirmMsg)) return;
+
+                var url = "/product/ProductQnaUpdate.tmall?method=deleteProductQnA";
+                if (funcCheckIsLogin()){
+                    $.post(url, param, function(data){
+                        var $data = eval(data);
+                        alert($data.message);
+                        if($data.result == "SUCCESS"){
+                            productQna.goPage('first', 1, '');
+                        }
+                    });
+                } else {
+                    var targetUrl = login_targetUrl + prdVar.prdNo + "?prdNo=" + prdVar.prdNo;
+                    productQna.sendEventMessage('loginFunc', targetUrl);
+                }
+            } catch (e) {
+                //alert(e.message)
+            }
+        }
+        , reply : function(idx){	// 답글달기 영역 노출
+            if ($("#dvQnaRepl" + idx)){
+                $("#dvQnaRepl" + idx).css("display", "block");
+                this.resizeParent();
+            }
+        }
+        , cancelRepl : function(idx){	// 답글달기 취소
+            if ($("#dvQnaRepl" + idx)){
+                $("#dvQnaRepl" + idx).css("display", "none");
+                this.resizeParent();
+            }
+        }
+        , addRepl : function(idx, contNo){
+            try{
+                if ($("input[name=sellerNo]").val() == 0) return;
+
+                var txaObj = $("#txaQnaRepl" + idx);
+                var txtObj = $("#txtQnaRepl" + idx);
+                if (txtObj == undefined && txaObj == undefined) return;
+
+                if (txaObj.val().trim().length == 0) {
+                    alert("내용을 입력하세요.");
+                    txaObj.focus();
+                    return;
+                }
+
+                if (!confirm("답변을 등록 하시겠습니까?")) return;
+
+                var param = {brdInfoClfNo : $("input[name=brdInfoClfNo]").val()
+                    , prdNo : $("input[name=brdInfoClfNo]").val()
+                    , rplyClf : "02"
+                    , hgrnkBrdInfoNo : contNo
+                    , flag : "prdQna"
+                    , brdInfoSbjct : encodeURIComponent(txtObj.val())
+                    , brdInfoCont : encodeURIComponent(txaObj.val())};
+                $.post('/product/ProductQnaReply.tmall?method=insertProductDetailQnAAnswer', param, function(data){
+                    var $data = eval(data);
+                    alert($data.message);
+                    if($data.result == "SUCCESS"){
+                        location.reload();
+                    }
+                });
+            } catch (e) {
+                //alert(e.message)
+            }
+        }
+        ,goPage : function(type, startNum, keyNo){
+            $("input[name=pageTypCd]").val(type);
+            $("input[name=curPage]").val(startNum);
+            $("input[name=keyNo]").val(keyNo);
+
+            pageForm.submit();
+        }
+        ,searchOption : function(val, nm){
+            $("input[name="+nm+"]").val(val);
+            this.goPage('first', 1, '');
+        }
+        ,processGoPage: function(e, $evtElem) {
+            e.preventDefault();
+
+            var pageType = $evtElem.attr("data-pageType");
+            var pageNum = $evtElem.attr("data-pageNum");
+            var keyNo = $evtElem.attr("data-keyNo");
+
+            this.goPage(pageType,pageNum,keyNo);
+
+            return false;
+        },
+        // 신고하기
+        fnReportContent : function(contNo, clfCd, contCd) {
+            var url = "/community/AuthShoppingInfoAction.tmall?method=getContentsReporting&contNo="
+                + contNo
+                + "&contDclObjClfCd="
+                + clfCd
+                + "&contDclObjContCd="
+                + contCd;
+
+            if (funcCheckIsLogin()) {
+                var _win = productQna.launchCenter(url, "contentReportPopup", 415, 490, "no");
+                _win.focus();
+            } else {
+                var targetUrl = login_targetUrl + prdVar.prdNo + "?prdNo=" + prdVar.prdNo;
+                productQna.sendEventMessage('loginFunc', targetUrl);
+            }
+        },
+
+        sendEventMessage: function (functionName, params) {
+            var isIE9 = (navigator.userAgent.toLowerCase().indexOf("msie 9") !== -1);
+            if (!isIE9) {
+                window.parent.postMessage({
+                    functionName: functionName,
+                    params: params
+                }, "*");
+            }
+        },
+
+        sendPostMessage: function(targetFrm, size) {
+            var isIE9 = (navigator.userAgent.toLowerCase().indexOf("msie 9") !== -1);
+
+            if (isIE9) {
+                var params = {
+                    "qna" : true,
+                    "targetFrm" : targetFrm,
+                    "qnaHeight": size
+                };
+                window.parent.postMessage(JSON.stringify(params), "*");
+            } else {
+                window.parent.postMessage({
+                    qna : true,
+                    targetFrm : targetFrm,
+                    qnaHeight: size
+                }, "*");
+            }
+        },
+
+        resizeParent : function(){
+            var targetFrm = '';
+            var targetHeight = "";
+
+            if(prdVar.targetFrm != undefined && prdVar.targetFrm != '') {
+                try {
+                    targetFrm = prdVar.targetFrm;
+                    if(prdVar.isMart
+                        || (prdVar.qnaList == "" && prdVar.qnaDtlsCd == "")){
+                        targetHeight = 0;
+                    }else{
+                        targetHeight = 34;
+                    }
+
+                    if (navigator.userAgent.indexOf("MSIE") != -1) {
+                        targetHeight =$('.prdc_qna').height() + targetHeight;
+                        productQna.sendPostMessage(targetFrm, targetHeight);
+                    } else if (navigator.userAgent.indexOf("Firefox") != -1) {
+                        targetHeight = $('.prdc_qna').height() + targetHeight;
+                        productQna.sendPostMessage(targetFrm, targetHeight);
+                    } else {
+                        targetHeight = $('.prdc_qna').height() + targetHeight;
+                        productQna.sendPostMessage(targetFrm, targetHeight);
+                    }
+
+                } catch (ex) { }
+            } else {
+                try {
+                    var height;
+                    targetFrm = "ifrmQnA";
+                    if(prdVar.isMart || (prdVar.qnaList == "" && prdVar.qnaDtlsCd == "")){
+                        height = 0;
+                    }else{
+                        height = 34;
+                    }
+
+                    if (navigator.userAgent.indexOf("MSIE") != -1) {
+                        targetHeight = $('.prdc_qna').height() + height;
+                        productQna.sendPostMessage(targetFrm, targetHeight);
+                    } else if (navigator.userAgent.indexOf("Firefox") != -1) {
+                        targetHeight = $('.prdc_qna').height() + height;
+                        productQna.sendPostMessage(targetFrm, targetHeight);
+                    } else {
+                        targetHeight = $('.prdc_qna').height() + height;
+                        productQna.sendPostMessage(targetFrm, targetHeight);
+                    }
+
+                } catch (ex) { }
+            }
+        },
+        // 비동기식
+        callAjaxAsynch : function(url, params, callBack) {
+            var pageRequest = false; // ajax object를 위한 변수.
+
+            if (!pageRequest && typeof XMLHttpRequest != 'undefined')
+                pageRequest = new XMLHttpRequest();
+
+            if (pageRequest) {
+                // pageRequest가 true인 경우만.
+                try {
+                    var isAsynch = true;
+                    if (params != '') {
+                        pageRequest.open('POST', url, isAsynch);
+                        pageRequest.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+                        /*pageRequest.setRequestHeader("Content-length", params.length);
+                        pageRequest.setRequestHeader("Connection", "close");*/
+
+                        pageRequest.send(params);
+                    } else {
+                        pageRequest.open('GET', url, isAsynch);
+                        pageRequest.send(null);
+                    }
+
+                    pageRequest.onreadystatechange = function() {
+                        if (pageRequest.readyState == 4) {
+                            var returnVal = 'FAIL';
+                            if (pageRequest.status == 200) {
+                                returnVal = pageRequest.responseText;
+                            }
+
+                            if (typeof (callBack) == "function") {
+                                callBack(returnVal);
+                            } else if (typeof (callBack) == "string") {
+                                if (callBack != '') {
+                                    eval(callBack + "('" + returnVal + "')");
+                                }
+                            }
+                        }
+                    };
+                } catch (e) {
+                    alert(e);
+                    var returnVal = 'FAIL';
+
+                    if (typeof (callBack) == "function") {
+                        callBack(returnVal);
+                    } else if (typeof (callBack) == "string") {
+                        if (callBack != '') {
+                            eval(callBack + "('" + returnVal + "')");
+                        }
+                    }
+                }
+            }
+        },
+        launchCenter : function(url, name, width, height, scroll) {
+            if (scroll == undefined)
+                scroll = "no";
+
+            var str = "height=" + height + ",innerHeight=" + height;
+            str += ",width=" + width + ",innerWidth=" + width;
+            str += ",status=no, resizable=no, menubar=no, toolbar=no, location=no, directories=no, scrollbars=" + scroll;
+
+            if (window.screen) {
+                var ah = screen.availHeight - 30;
+                var aw = screen.availWidth - 10;
+
+                var xc = (aw - width) / 2;
+                var yc = (ah - height) / 2;
+
+                str += ",left=" + xc + ",screenX=" + xc;
+                str += ",top=" + yc + ",screenY=" + yc;
+            }
+
+            return window.open(url, name, str);
+        }
+    };
+    return productQna;
+}));

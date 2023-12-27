@@ -1,0 +1,99 @@
+(function (root, factory) {
+    'use strict';
+    if (typeof define === 'function' && define.amd) {
+        define([
+            'jquery'
+        ], factory);
+    } else {
+        root.powerLink = factory(
+            root.jQuery
+        );
+    }
+}(window || this, function ($) {
+    'use strict';
+    var categoryVar = categoryInfo;
+    var powerLink = {
+        init: function () {
+            this.requestData();
+        },
+
+        requestData: function () {
+            try {
+                $.ajax({
+                    url: this.createRequestUrl(),
+                    dataType: "jsonp",
+                    jsonpCallback: "handle_naver_ads_response",
+                    scriptCharset: "UTF-8",
+                    success: function (data) {
+                        categoryVar.contData = data.ads;
+                        categoryVar.dataSize = categoryVar.contData.length;
+
+                        var hyphen = "- ";
+
+                        if (categoryVar.dataSize > 0) {
+                            $('#idPowerLink').show();
+
+                            for (var i = 0; i < categoryVar.dataSize && i < 6; i++) {
+                                var dataList = categoryVar.contData[i];
+                                var headline = dataList.headline;
+                                var description = hyphen.concat(dataList.description);
+                                var clickUrl = dataList.clickUrl;
+                                var displayUrl = dataList.displayUrl;
+
+                                var keywordArrays = categoryVar.keywordArray.split(",");
+                                for (var s = 0; s < keywordArrays.length; s++) {
+                                    var keywords = keywordArrays[s];
+                                    headline = headline.replace(keywords.trim(), '<em>' + keywords + '</em>');
+                                    description = description.replace(keywords, '<em>' + keywords + '</em>');
+                                }
+
+                                $('#idPowerLinkTitle' + i).attr('href', clickUrl);
+                                $('#idPowerLinkTitle' + i + ' > strong').html(headline);
+                                $('#idPowerLinkTitle' + i + ' > em').html(description);
+                                $('#idPowerLinkTitle' + i + ' > span').text(displayUrl);
+                                $('#idPowerLinkLi' + i).show();
+                            }
+                        }
+                    },
+                    error: function (e) {
+                        console.log(e);
+                    }
+                });
+            } catch (e) {
+            }
+        },
+
+        getChannel: function (areaCode) {
+            var areaCodes = [];
+
+            areaCodes['category'] = {ch: '11st.ch2'};
+            areaCodes['prd'] = {ch: '11st.ch3'};
+            areaCodes['title'] = {ch: '11st.ch5'};
+
+            var channel = areaCodes[areaCode];
+
+            if (channel) {
+                return channel;
+            } else {
+                return areaCodes['category'];
+            }
+        },
+
+        createRequestUrl: function () {
+            var url = ['output=jsonp'];
+
+            url.push('channel=' + this.getChannel(categoryVar.areaCode).ch);
+            url.push('query=' + encodeURIComponent(categoryVar.powerLinkKeyWord));
+            url.push('pageSize=6');
+            url.push('url=' + encodeURIComponent(window.location.href));
+            url.push('category1=' + encodeURIComponent(categoryVar.cat1));
+            url.push('category2=' + encodeURIComponent(categoryVar.cat2));
+            url.push('category3=' + encodeURIComponent(categoryVar.cat3));
+            url.push('category4=' + encodeURIComponent(categoryVar.cat4));
+
+            return categoryVar.baseRequestUrl + '?' + url.join('&');
+        }
+    };
+
+    return powerLink;
+}));

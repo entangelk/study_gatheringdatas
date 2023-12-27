@@ -1,0 +1,80 @@
+function funcCheckIsLogin() {
+    var arg = "TMALL_AUTH=";
+    var alen = arg.length;
+    var clen = document.cookie.length;
+    var i = 0;
+
+    while(i < clen){
+        var j = i + alen;
+        if(document.cookie.substring(i, j) == arg)
+            return true;
+        i = document.cookie.indexOf(" ", i) + 1;
+        if(i == 0) break;
+    }
+    return false;
+}
+
+//미성년자 여부(true이면 미성년자임)
+function funcCheckIsMinor() {
+    var tmallIsMinor = false;
+    authkey = getCookieTmall("TMALL_STATIC");
+    if(authkey == "N"){
+        //authkey가 N이면 미성년자임
+        tmallIsMinor = true;
+    }
+    return tmallIsMinor;
+}
+
+function funcIsNonAuth() {
+    var arg = "TMALL_NON_AUTH=";
+    var alen = arg.length;
+    var clen = document.cookie.length;
+    var i = 0;
+
+    while(i < clen){
+        var j = i + alen;
+        if(document.cookie.substring(i, j) == arg) {
+            return true;
+        }
+        i = document.cookie.indexOf(" ", i) + 1;
+        if(i == 0) break;
+    }
+    return false;
+}
+
+function openLogin(type, formName, targetUrl, width, height, scroll, refresh, noNonMem) {
+    var url = "";
+    try {
+        url = _LOGIN_TARGET_URL_;
+    } catch ( ex )	{
+        url = "http://www.11st.co.kr";
+    }
+    url += '/login/PopupLogin.tmall?type='+type+'&formName='+formName+'&width='+width+'&height='+height+'&scroll='+scroll+'&refresh='+refresh+'&targetUrl='+encodeURIComponent ( encodeURIComponent(targetUrl))+'&domain='+document.domain+'&noNonMem='+noNonMem;
+    if( funcIsNonAuth() ) {
+        url += '&authMethod=nonAuth';
+    }
+
+    var protocol = window.document.location.protocol;
+    //Header JS Include
+    if ( protocol == "https:" ) {
+        url += '&protocol=https';
+    }
+
+    cw = screen.availWidth; //화면 너비
+    ch = screen.availHeight; //화면 높이
+    if(type == '4') {
+        sw=750;//띄울 창의 너비
+        sh=515;//띄울 창의 높이
+    }else if(type == '6'){
+        sw=750;//띄울 창의 너비
+        sh=515;//띄울 창의 높이
+    }else{
+        sw = 750;//띄울 창의 너비
+        sh = 515;//띄울 창의 높이
+    }
+
+    ml = (cw-sw) / 2;//가운데 띄우기위한 창의 x위치
+    mt = (ch-sh) / 2;//가운데 띄우기위한 창의 y위치
+
+    return window.open(url, 'login', 'width='+sw+',height='+sh+',top='+mt+',left='+ml+',scrollbars=1,status=no');
+}

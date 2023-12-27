@@ -1,0 +1,337 @@
+(function (root, factory) {
+    'use strict';
+    if (typeof define === 'function' && define.amd) {
+        define([
+            'jquery'
+        ], factory);
+    } else {
+        root.recommend = factory(
+            root.jQuery
+        );
+    }
+}(window || this, function ($) {
+    'use strict';
+
+    var prdVar = productPrdInfo;
+    var etcVar = productEtcInfo;
+    var SUPPORTED_BROWSER = !$('html').is('.ie9');
+
+    var isEmpty = function (value) {
+        if (value == "" || value == null || value == undefined || (value != null && typeof value == "object" && !Object.keys(value).length)) {
+            return true
+        } else {
+            return false
+        }
+    };
+
+    var recommend = {
+        init: function () {
+            var _this = this;
+            $.when(_this.setTopAreaHtml(),
+                _this.setSellerBestProductsHtml(),
+                _this.setViewedTogetherHtml(),
+                _this.setShockingDealHtml(),
+                _this.setBuyerIsChoiceHtml(),
+                _this.setAmazonProductHtml()
+            ).then(function () {
+                _this.setSwiper();
+                _this.bindEvent();
+                _this.sendAdDispUrl();
+                _this.sendImpression();
+                _this.sendCategoryImpression();
+            });
+        },
+        setTopAreaHtml: function () {
+            return $.ajax({
+                url: "/products/view/pc/top/" + prdVar.prdNo,
+                data: {
+                    'mDispCtgrNo': etcVar.middleCategoryNo,
+                    'isShockingDeal': prdVar.isShockingDeal,
+                    'supported': SUPPORTED_BROWSER,
+                    'spn' : prdVar.spn
+                },
+                dataType: 'text',
+                contentType: 'text/html; charset=UTF-8'
+            }).done(function (result) {
+                $("#recommend_top").replaceWith(result);
+                return 200;
+            });
+        },
+        setViewedTogetherHtml: function () {
+            if (productEtcInfo.showRecommendArea) {
+                return $.ajax({
+                    url: "/products/view/pc/view-together/" + prdVar.prdNo,
+                    data: {
+                        'sDispCtgrNo': prdVar.sdispCtgrNo,
+                        'supported': SUPPORTED_BROWSER
+                    },
+                    dataType: 'text',
+                    contentType: 'text/html; charset=UTF-8'
+                }).done(function (result) {
+                    $("#recommend_viewedTogether").replaceWith(result);
+                    return 200;
+                });
+            }
+        },
+        setShockingDealHtml: function () {
+            if (productEtcInfo.showRecommendArea) {
+                return $.ajax({
+                    url: "/products/view/pc/shocking-deal/" + prdVar.prdNo,
+                    data: {
+                        'mDispCtgrNo': etcVar.middleCategoryNo,
+                        'supported': SUPPORTED_BROWSER
+                    },
+                    dataType: 'text',
+                    contentType: 'text/html; charset=UTF-8'
+                }).done(function (result) {
+                    $("#recommend_shockingDeal").replaceWith(result);
+                    return 200;
+                });
+            }
+        },
+        setBuyerIsChoiceHtml: function () {
+            if (productEtcInfo.showRecommendArea) {
+                return $.ajax({
+                    url: "/products/view/pc/buyer-is-choice/" + prdVar.prdNo,
+                    data: {
+                        'supported': SUPPORTED_BROWSER
+                    },
+                    dataType: 'text',
+                    contentType: 'text/html; charset=UTF-8'
+                }).done(function (result) {
+                    $("#recommend_buyerIsChoice").replaceWith(result);
+                    return 200;
+                });
+            }
+        },
+        setAmazonProductHtml: function () {
+            if (productEtcInfo.showRecommendArea) {
+                return $.ajax({
+                    url: "/products/view/pc/amazon-product/" + prdVar.prdNo,
+                    data: {
+                        'sDispCtgrNo': prdVar.sdispCtgrNo,
+                        'supported': SUPPORTED_BROWSER
+                    },
+                    dataType: 'text',
+                    contentType: 'text/html; charset=UTF-8'
+                }).done(function (result) {
+                    $("#recommend_for_amazon").replaceWith(result);
+                    return 200;
+                });
+            }
+        },
+        setSellerBestProductsHtml: function () {
+            var defaultBestProductHtml = '<div class="c_product_item_list c_product_item_list_style3">'
+                + '<p class="text_guide">인기상품 준비 중입니다.</p>'
+                + '</div>';
+
+            return $.ajax({
+                url: "/products/view/pc/seller-best/" + prdVar.prdNo,
+                data: {
+                    'sellerNo': prdVar.selMnbdNo,
+                    'supported': SUPPORTED_BROWSER
+                },
+                dataType: 'text',
+                contentType: 'text/html; charset=UTF-8'
+            }).done(function (result) {
+                if ("" === result) {
+                    result = defaultBestProductHtml;
+                }
+                $("#recommend_sellerBestProducts").replaceWith(result);
+                return 200;
+            }).fail(function () {
+                $("#recommend_sellerBestProducts").replaceWith(defaultBestProductHtml);
+            });
+        },
+        setSwiper: function () {
+            // 광고/추천 상품
+            $('.c_product_item_list_style1 .swiper-container').each(function (index, element) {
+                var $this = $(this);
+                var swiper = new Swiper($this, {
+                    loop: true,
+                    allowTouchMove: false,
+                    spaceBetween: 25,
+                    navigation: {
+                        nextEl: $(this).siblings('.c_product_pagination').find('.navigator .next'),
+                        prevEl: $(this).siblings('.c_product_pagination').find('.navigator .previous'),
+                    },
+                    pagination: {
+                        el: $(this).siblings('.c_product_pagination').find('.page'),
+                        type: 'custom',
+                        renderCustom: function (swiper, current, total) {
+                            return '<strong aria-label="현재페이지">' + current + '</strong> <span class="skip" aria-label="전체 페이지">' + total + '</span>' + total;
+                        }
+                    }
+                });
+            });
+            $('.c_product_item_list_style2 .swiper-container').each(function (index, element) {
+                var $this = $(this);
+                var swiper = new Swiper($this, {
+                    loop: true,
+                    allowTouchMove: false,
+                    spaceBetween: 30,
+                    navigation: {
+                        nextEl: $(this).siblings('.c_product_pagination').find('.navigator .next'),
+                        prevEl: $(this).siblings('.c_product_pagination').find('.navigator .previous'),
+                    },
+                    pagination: {
+                        el: $(this).siblings('.c_product_pagination').find('.page'),
+                        type: 'custom',
+                        renderCustom: function (swiper, current, total) {
+                            return '<strong aria-label="현재페이지">' + current + '</strong> <span class="skip" aria-label="전체 페이지">' + total + '</span>' + total;
+                        }
+                    }
+                });
+            });
+
+            $('.c_product_item_list_style3 .swiper-container').each(function (index, element) {
+                var $this = $(this);
+                var swiper = new Swiper($this, {
+                    loop: true,
+                    allowTouchMove: false,
+                    spaceBetween: 40,
+                    navigation: {
+                        nextEl: $(this).siblings('.c_product_pagination').find('.navigator .next'),
+                        prevEl: $(this).siblings('.c_product_pagination').find('.navigator .previous'),
+                    },
+                    pagination: {
+                        el: $(this).siblings('.c_product_pagination').find('.page'),
+                        type: 'custom',
+                        renderCustom: function (swiper, current, total) {
+                            return '<strong aria-label="현재페이지">' + current + '</strong> <span class="skip" aria-label="전체 페이지">' + total + '</span>' + total;
+                        }
+                    }
+                });
+            });
+
+            $('.c_product_item_list_style1').find('.c_product_pagination .navigator button').on('click', function () {
+                recommend.sendImpression();
+            });
+
+            // 첫 페이지일 때 .previous -disabled
+            $('.c_product_item_list_style2').find('.c_product_pagination_style1 .page strong').each(function () {
+                if ($(this).text('1')) {
+                    $(this).parents('.c_product_pagination').find('.navigator .previous').attr('disabled', true);
+                }
+            });
+
+            $('.c_product_item_list_style2').find('.c_product_pagination .navigator button').on('click', function () {
+                recommend.sendImpression();
+                if ($(this).parents('.c_product_pagination').find('.page strong').text() == '1') {
+                    $(this).parents('.c_product_pagination').find('.navigator .previous').attr('disabled', true);
+                } else {
+                    $(this).parents('.c_product_pagination').find('.navigator .previous').removeAttr('disabled');
+                }
+            });
+            $('.c_product_item_list_style3').find('.c_product_pagination .navigator button').on('click', function () {
+                recommend.sendImpression();
+            });
+
+            return false;
+        },
+        bindEvent: function () {
+            $('.c_ad_layer').css('display', 'none');
+            $('.c_adtext > button').click(function () {
+                $(this).siblings('.c_ad_layer').toggle();
+            });
+            $('.c_ad_layer_close').click(function () {
+                $(this).parents('.c_ad_layer').css('display', 'none');
+            });
+
+            $('.c_product_dialog_wrap[role=dialog]').css('display', 'none');
+
+            $('.c_product_item_list li a').one('click', function (e) {
+                e.preventDefault();
+
+                if ("0" === $(this).attr('data-log-index')) {
+                    $(this).attr('data-log-index', $(this).parents("li").index() + 1);
+                }
+
+                var adAceUrl = '';  //광고 과금 URL
+                var adAceUrlVerifyHost = 'action.adoffice.11st.co.kr';
+                var callAjaxUrls = [];
+                var adClickTrcUrlList = $(this).attr('data-clickurl');
+                var linkUrl = $(this).attr('data-linkurl');
+
+                if (!isEmpty(linkUrl)) {
+                    var myArray2 = new Array();
+                    myArray2 = new Array(adClickTrcUrlList);
+                    var carter = myArray2.toString();
+                    carter = carter.replace("[", "");
+                    carter = carter.replace("]", "");
+                    carter = carter.split(",");
+
+                    carter.forEach(function (value) {
+                        if (value.indexOf(adAceUrlVerifyHost) > -1) {
+                            adAceUrl = value + encodeURIComponent(linkUrl);
+                        } else if (isEmpty(adClickTrcUrlList)) {
+                            adAceUrl = linkUrl;
+                        } else {
+                            callAjaxUrls.push(
+                                $.ajax({
+                                    url: value,
+                                    dataType: 'jsonp'
+                                })
+                            );
+                        }
+                    });
+                    $.when(callAjaxUrls).always(function () {
+                        var openNewWindow = window.open("about:blank");
+                        openNewWindow.location.href = adAceUrl;
+                    });
+                }
+            });
+
+            return false;
+        },
+        sendAdDispUrl: function () {
+            var rowArr = [];
+            var resultArr = [];
+            $('.c_product_item_list li a').each(function (v) {
+                var url = $(this).data("dispurl");
+                if (url !== undefined) {
+                    url = url.replace("[", "");
+                    url = url.replace("]", "");
+                    rowArr.push(url);
+                }
+            });
+
+            $.each(rowArr, function (i, el) {
+                if ($.inArray(el, resultArr) === -1) resultArr.push(el);
+            });
+
+            resultArr.forEach(function (value) {
+                $.ajax({
+                    url: value,
+                    dataType: 'json'
+                });
+            });
+            return false;
+        },
+
+        sendImpression: function (list) {
+            $('.swiper-slide-active li a').each(function (v) {
+                var isImpression = $(this).attr('data-impression');
+                if (isImpression !== undefined
+                    && "Y" === isImpression) {
+                    $(this).attr('data-impression', "N");
+                    rakeLog.sendRakeLog(this, 'impression');
+                }
+            });
+        },
+        sendCategoryImpression: function () {
+            $('#category_recommend li a').each(function (v) {
+                var isImpression = $(this).attr('data-impression');
+                if (isImpression !== undefined
+                    && "Y" === isImpression) {
+                    $(this).attr('data-impression', "N");
+                    rakeLog.sendRakeLog(this, 'impression');
+                }
+                ;
+            });
+        }
+    };
+
+    return recommend;
+}));
+

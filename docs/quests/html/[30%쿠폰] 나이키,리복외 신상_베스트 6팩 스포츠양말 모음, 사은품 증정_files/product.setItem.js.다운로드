@@ -1,0 +1,335 @@
+;(function (root, factory) {
+    'use strict';
+    if (typeof define === 'function' && define.amd) {   // jshint ignore:line
+        // AMD
+        define([                                            // jshint ignore:line
+            'jquery',
+            'handlebars',
+            'orderInfo'
+        ], factory);
+    } else {
+        // Browser globals
+        root.skp11 = root.skp11 || {};
+        root.skp11.product = root.skp11.product || {};
+        root.skp11.product.SetItem = factory(
+            root.jQuery,
+            root.Handlebars,
+            root.orderInfo
+        );
+    }
+}(this, function ($, Handlebars, orderInfo) {
+    'use strict';
+    var SetItem;
+
+    SetItem = function () {
+        // 템플릿 컴파일
+        this.$orderBtnContent = $('[name=divOrderBtnArea]');
+        this.$cartLayerContent = $('.btn_cart_wrap');
+
+        this.$win = $(window);
+        this.index = 0;
+
+        // bottom 추가
+        this.sourceBot = $('#selcetBottomOptionTemplate').html();
+        this.handlebarsBot = Handlebars.compile(this.sourceBot);
+        this.$templateContentBot = $('.option_bottom');
+        this.$amountContentBot = $('div.option_amount > input');
+
+        Handlebars.registerHelper("debug", function(optionalValue) {
+            console.log("Current Context");
+            console.log("====================");
+            console.log(this);
+
+            if (optionalValue) {
+                console.log("Value");
+                console.log("====================");
+                console.log(optionalValue);
+            }
+        });
+    };
+
+    SetItem.prototype.init = function () {
+        var _this = this;
+
+        _this.bind();
+        orderInfo.init();
+
+    };
+
+
+    SetItem.prototype.bind = function () {
+        var _this = this, data = {};
+        var prdVar = productPrdInfo;
+
+        // 커스텀 이벤트 트리거로 데이터를 처리한다.
+        _this.$win.on('setItem', function (e, data) {
+            if(data){
+                // 선택된 아이템을 삽입
+                _this.setTempalte(data);
+            }
+            _this.conditionBuyInventory();
+            // 삽입된 아이템을 기준으로 가격과 수량 재계산
+            orderInfo.setTotalPrice();
+        });
+
+        // 커스텀 이벤트 트리거로 데이터를 처리한다.
+        _this.$win.on('delItem', function (e, data) {
+            var $targetBot = _this.$templateContentBot.find("li[data-prdstckno="+data.prdStckNo+"]");
+            orderInfo.delOrderArr(data.clsf, data.prdStckNo);
+            $targetBot.remove();
+            orderInfo.setTotalPrice();
+        });
+
+        // 커스텀 이벤트 트리거로 데이터를 처리한다.
+        _this.$win.on('setChgCupn', function (e, data) {
+            orderInfo.setOrderCouponParam(data);
+        });
+        _this.$win.on('directNonLogin', function (e) {
+            orderInfo.chkLoginOrder();
+        });
+
+
+        // 선택된 상품내의 증감 버튼 및 삭제 버튼 기능
+        _this.$templateContentBot.on('click', 'button', function (e) {
+            e.preventDefault();
+            clickBtnOptQtyPlusMinus(this);
+        });
+
+        var clickBtnOptQtyPlusMinus = function(obj) {
+            var $this = $(obj),
+                $target = $this.closest('li'),
+                $targetWrap = $target.closest('ul'),
+                prdStckNo = $target.data('prdstckno'),
+                $input = $('div.option_amount').find('input[data-prdstckno=' + prdStckNo + ']'),
+                amount = $input.val(),
+                isGroupProduct = prdVar.isStandardPrd;
+
+            var clsf = "";
+            if ($targetWrap.hasClass('ui_optSelWrapper')) {
+                clsf = "option";
+            } else if ($targetWrap.hasClass('ui_addPrdSelWrapper')) {
+                clsf = "addPrd";
+            } else if ($targetWrap.hasClass('ui_mdPickSelWrapper')) {
+                clsf = "recmPrd";
+            }
+
+            var qty = !isGroupProduct
+                ? Number(productOptInfo.buyUnitQty)
+                : 1;
+
+            if ($this.hasClass('btn_decrs') || $this.hasClass('numbtn_minus')) {
+                if (amount % qty > 0) {
+                    amount = Number(amount) - (amount % qty);
+                } else {
+                    amount = Number(amount) - qty;
+                }
+
+                if (amount < qty) {
+                    return false;
+                }
+
+                $input.val(amount);
+                orderInfo.setOrderArrAmount(clsf, prdStckNo, amount);
+            } else if ($this.hasClass('btn_incrs') || $this.hasClass('numbtn_plus')) {
+                if(amount % qty > 0) {
+                    amount = Number(amount) + (qty - (amount % qty));
+                } else {
+                    amount = Number(amount) + qty;
+                }
+
+                if(orderInfo.checkStckQty(clsf, prdStckNo, amount)){
+                    $input.val(amount);
+                    orderInfo.setOrderArrAmount(clsf, prdStckNo, amount);
+                };
+            } else if ($this.hasClass('c_product_btn_delete') || $this.hasClass('btn_cc')) {
+
+                _this.$templateContentBot.find($('[data-prdstckno=' + prdStckNo + ']')).remove();	// bottom 추가
+                orderInfo.delOrderArr(clsf, prdStckNo);
+                _this.$win.trigger("callGaEvent","0;"+ (orderInfo.getBtnPosition($this) == "top" ? "12" : "20") +";옵션 삭제");
+                _this.conditionBuyInventory();
+            }
+
+            orderInfo.setTotalPrice();
+        }
+
+
+        _this.$templateContentBot.on('keyup', 'input', function (e) {	// 하단 옵션 수량 이벤트
+            if(13 === e.keyCode){
+                $(this).trigger("change");
+            }
+        });
+
+        _this.$templateContentBot.on('change', 'input', function (e) {	// 하단 옵션 수량 이벤트
+            e.preventDefault();
+            var $this = $(this),
+                $target = $this.closest('li'),
+                $targetWrap = $target.closest('ul'),
+                prdStckNo = $target.data('prdstckno'),
+                $input = $('div.option_amount').find('input[data-prdstckno=' + prdStckNo + ']'),
+                clsf = "";
+
+            if($targetWrap.hasClass('ui_optSelWrapper')) {
+                clsf = "option";
+            }else if($targetWrap.hasClass('ui_addPrdSelWrapper')) {
+                clsf = "addPrd";
+            }else if($targetWrap.hasClass('ui_mdPickSelWrapper')) {
+                clsf = "recmPrd";
+            }else{
+                return;
+            }
+
+            var amount = this.value.replace(/[^0-9]/g,'');
+            if(amount != this.value || this.value < 1){
+                alert("수량은  1이상의 숫자만 입력이 가능합니다.");
+                amount = orderInfo.getBeforeAmount(clsf, prdStckNo);
+            }
+
+            if (!orderInfo.checkStckQty(clsf, prdStckNo, amount)){
+                amount = orderInfo.getBeforeAmount(clsf, prdStckNo);
+            }
+
+            $input.val(amount);
+            // top 추가
+            var $topInput = $('div.plusminus_wrap').find('input[data-prdstckno=' + prdStckNo + ']');
+            $topInput.val(amount);
+
+            orderInfo.setOrderArrAmount(clsf, prdStckNo, amount);
+            orderInfo.setTotalPrice();
+        });
+
+        // 하단 옵션 영역 이벤트 추가
+        _this.$amountContentBot.on('keyup', function (e) {
+            if(13 === e.keyCode){
+                $(this).trigger("change");
+            }
+        });
+
+        _this.$amountContentBot.on('change', function (e) {
+            e.preventDefault();
+            var prdStckNo = $(this).data('prdstckno');
+            var amount = this.value.replace(/[^0-9]/g,'');
+            if(amount != this.value || this.value < 1){
+                alert("수량은  1이상의 숫자만 입력이 가능합니다.");
+                amount = orderInfo.getBeforeAmount("option", prdStckNo);
+                this.value = amount;
+            }
+            if(!orderInfo.checkStckQty("option", prdStckNo, amount)){
+                amount = orderInfo.getBeforeAmount("option", prdStckNo);
+                this.value = amount;
+            };
+            orderInfo.setOrderArrAmount("option", prdStckNo, amount);
+            orderInfo.setTotalPrice();
+        });
+
+        _this.$orderBtnContent.on('click', 'a, button', function (e) {
+            e.preventDefault();
+            var $this = $(this);
+            if ($this.hasClass("gift")) {
+                orderInfo.sendGift(orderInfo.getBtnPosition($this));
+            } else if ($this.hasClass("cart")) {
+                orderInfo.cartProduct(orderInfo.getBtnPosition($this));
+            }
+            /*else if ($this.hasClass("pay11") || $this.hasClass("skpay")) {
+                orderInfo.syrupPay(orderInfo.getBtnPosition($this));
+            }*/
+        });
+
+        _this.$orderBtnContent.on('click', 'a', function (e) {
+            e.preventDefault();
+            var $this = $(this);
+            if($this.hasClass("buying")) {
+                if ($this.hasClass("download")) {
+                    orderInfo.BuyPromotion(orderInfo.getBtnPosition($this));
+                } else {
+                    orderInfo.buyProduct(orderInfo.getBtnPosition($this), "N");
+                }
+            }
+        });
+
+        _this.$cartLayerContent.on('click', 'a', function(e){
+            e.preventDefault();
+            if($(this).hasClass('btn_lay')){
+                if($(this).hasClass('call_cart_page')){
+                    orderInfo.redirectCartPage();
+                }else if($(this).hasClass('ui_info_close')){
+                    _this.$cartLayerContent.find("div.ui_info_content").hide();
+                }
+            }
+            return false;
+        });
+
+        $('.lay_conts > .call_cart_page').on('click', function(e){	// 하단 버튼 클릭시
+            e.preventDefault();
+            orderInfo.redirectCartPage();
+            return false;
+        });
+
+        $('#botRentalOrd').on('click', function(e){
+            e.preventDefault();
+            var $this = $(this);
+            if($this.hasClass("buying")) {
+                orderInfo.buyProduct(orderInfo.getBtnPosition($this), "N");
+            }
+        });
+
+        $('#carProductOrder').on('click', function(e){
+            e.preventDefault();
+            var $this = $(this);
+            if($this.hasClass("buying")) {
+                orderInfo.buyProduct(orderInfo.getBtnPosition($this), "N");
+            }
+        })
+    };
+
+    SetItem.prototype.setTempalte = function (data) {
+        var _this = this,
+            targetClass = '.' + data.target;
+
+        _this.$templateContentBot.filter(targetClass).prepend(_this.handlebarsBot(data));
+        _this.setTempalteImg(data);
+    };
+
+    SetItem.prototype.setTempalteImg = function (data) {	// 하단 이미지 세팅
+        var targetIdx	= data.idxMixNo;
+        var optIdx	= '';
+        try {
+            var imgHtml	= '';
+            if(targetIdx.indexOf(',') >= 0) {
+                var tempIdx	= '';
+                tempIdx	= targetIdx.split(',');
+                if(tempIdx != undefined && tempIdx.length > 0) {
+                    optIdx	= tempIdx[0];
+                }
+            } else {
+                optIdx	= targetIdx;
+            }
+
+            if(optIdx != '') {
+                $('.option_item_list').eq(0).find('li').each(function (){
+                    if($(this).data('optno') == optIdx){
+                        imgHtml	= $(this).find('.photo_wrap').html();
+                    }
+                });
+                if(imgHtml !=undefined && imgHtml != '') {
+                    $('.option_bottom').find('.photo_wrap').eq(0).html(imgHtml).show();
+                }
+            }
+        } catch (e) {
+        }
+
+    };
+
+    SetItem.prototype.conditionBuyInventory = function () {
+        var _this = this;
+        _this.$templateContentBot.each(function (i, v) {
+            var $this = $(v);
+            if ($this.find('li').length > 0) {
+                $this.removeClass('skip');
+            } else {
+                $this.addClass('skip');
+            }
+        });
+    };
+
+    return SetItem;
+}));

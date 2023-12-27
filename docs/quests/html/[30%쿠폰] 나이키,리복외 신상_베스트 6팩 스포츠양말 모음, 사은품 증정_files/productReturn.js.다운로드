@@ -1,0 +1,64 @@
+/**
+ * @method: productReturn
+ * @dependency: requireJS, jQuery
+ */
+(function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define([
+            'jquery'
+        ], factory);
+    } else {
+        root.productReturn = factory(
+            root.jQuery
+        );
+    }
+}(window || this, function ($m) {
+    'use strict';
+    var prdVar = productPrdInfo;
+
+    var productReturn = {
+
+        init: function () {
+            $('#reportProductPop').click(function (e) {
+                var prdNo = $(this).attr("data-prdNo");
+                var prdNm = $(this).attr("data-prdNm");
+                var sellerNo = $(this).attr("data-selMnbdNo");
+                var sellerId = $(this).attr("data-memID");
+
+                if (prdVar.isNewReportedProduct) {
+                    productReturn.reportPop(prdNo);
+                } else {
+                    productReturn.reportProductPop(prdNo, prdNm, sellerNo, sellerId);
+                }
+            });
+        },
+
+        /**
+         * 11번가 안전거래센터 - 11번가 신고센터
+         *
+         * @return
+         */
+        reportProductPop: function (prdNo, prdNm, sellerNo, sellerId) {
+            var url = "https://help.11st.co.kr/11st/mail/MailStatementPopup.jsp?ordNo=&prdNo="
+                + prdNo
+                + "&prdNm="
+                + prdNm
+                + "&sellerNo="
+                + sellerNo
+                + "&sellerGrade=&sellerId=" + sellerId;
+            window.open(url, "_blank", "width=100, height=100, resizable=no, scrollbar=no, toolbar=no,menubar=no");
+        },
+
+        /**
+         * 11번가 안전거래센터 - 11번가 신고센터
+         *
+         * @return
+         */
+        reportPop: function (prdNo) {
+            var url = "https://cs.11st.co.kr/page/popup/report/safety?prdNo=" + prdNo;
+            window.open(url, '_blank', 'width=800, height=800, resizable=yes, scrollbars=yes');
+        }
+    };
+
+    return productReturn;
+}));

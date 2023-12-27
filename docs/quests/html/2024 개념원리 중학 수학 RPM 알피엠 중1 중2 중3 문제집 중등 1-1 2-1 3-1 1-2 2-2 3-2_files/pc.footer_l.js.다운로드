@@ -1,0 +1,2428 @@
+/* footerCommonJs.js */
+// common.js
+var FooterComm = {};
+if(typeof(FooterData) === "undefined") FooterData = {};
+
+var imgObj = new Image();
+
+var seq = "";
+
+var mouseStatus = false;
+
+function funcCartProduct(prdNo, adultsYn){
+	if(adultsYn == 'N'){
+		if(!funcCheckIsLogin()){
+			openLogin(1);
+			return;
+		}
+		if(funcCheckIsMinor()){
+			var conUrl = _GNB_CONTEXT_PATH_ + "/jsp/common/checkAdultContents.jsp?referer=" + document.domain;
+			var conWin = window.open(conUrl, 'PreView', "width=800, height=320, scrollbars=yes, status=no");
+			return;
+		}else{
+			hiddenProcess.location.href = _GNB_CONTEXT_PATH_ + "/cart/CartAction.tmall?method=getRegMultiCart&arrPrdNo="+prdNo+"&accountBar=T";
+		}
+	}else{
+		hiddenProcess.location.href = _GNB_CONTEXT_PATH_ + "/cart/CartAction.tmall?method=getRegMultiCart&arrPrdNo="+prdNo+"&accountBar=T";
+	}
+}
+
+var jjimPlnDispNo = "";
+var jjimProdNo = "";
+
+function afterLogin(){
+	if($ID('divGnbLogin')){
+		var logoutViewLoc = $ID('divGnbLogin');
+		logoutViewLoc.innerHTML = "<img src=\"/img/common/gr/utilMenu_01_2.gif\" alt=\"로그아웃\" onClick=\"logout();\" style=\"cursor:hand\">";
+	}
+	hiddenProcess.location.href = _GNB_CONTEXT_PATH_ + "/interest/AuthInterestProductAction.tmall?method=interestProductTransit&interestPrdNo="+jjimProdNo+"&accountBar=T";
+}
+
+function afterLikeSrchLogin(){
+	document.location.reload();
+}
+
+//상품상세 보기19금
+function productDetailViewAdults(prdNo,adultsYn,xfrom,xzone,tar,redirectUrl){
+	var url = _PRODUCT_DETAIL_URL_+prdNo+"&xfrom="+xfrom+"&xzone="+xzone;
+	if(typeof(redirectUrl) != "undefined"){
+		url = redirectUrl;
+	}
+
+	if(adultsYn == 'N'){
+		if(!funcCheckIsLogin()){
+			openLoginAdults(2,'',url);
+			return;
+		}
+
+		if(funcCheckIsMinor()){
+			var targetUrl = encodeURIComponent(url);
+			url = _GNB_CONTEXT_PATH_+"/checkAdult.page?referer="+document.domain+"&type=2&targetUrl="+targetUrl;
+			window.open(url, 'PreView', "width=800, height=320, scrollbars=no, status=no");
+		}else{
+			openProductDetail(url,"TOP");
+		}
+	}else{
+		openProductDetail(url,"TOP");
+	}
+}
+
+function productDetailViewAdultsCPC(prdNo, adultsYn, trcNo, typGubn, areaGubn, xfrom, xzone){
+	var redirectUrl = _GNB_CONTEXT_PATH_ + '/advert/internalAd.tmall?prdNo=' + prdNo + '&trcNo=' + trcNo + '&typGubn=' + typGubn + '&areaGubn=' + areaGubn + '&xfrom=' + xfrom + '&xzone=' + xzone;
+	return productDetailViewAdults(prdNo, adultsYn, xfrom, xzone, '', redirectUrl);
+}
+
+function openProductDetail(url, tar){
+	switch (tar){
+	case "OPEN":
+		window.open(url, '11st', "width=1024, height=768, scrollbars=no, status=no");
+		break;
+	case "TOP":
+		top.location.href = url;
+		break;
+	case "SELF":
+		location.href = url;
+		break;
+	default:
+		window.open(url, '11st', "width=1024, height=768, scrollbars=no, status=no");
+		break;
+	}
+}
+
+//브라우져 정보 리턴
+function getBrowserInfo()	{
+	var browser = navigator.userAgent.toLowerCase();
+
+	if(browser.indexOf("msie 6") != -1)	{
+		return "IE6";
+	}	else if(browser.indexOf("msie 7") != -1)	{
+		return "IE7";
+	}	else if(browser.indexOf("msie 8") != -1)	{
+		return "IE8";
+	}	else if(browser.indexOf("msie") != -1)		{
+		return "IE";
+	}	else if(browser.indexOf("firefox") != -1)	{
+		return "FF";
+	}	else if(browser.indexOf("opera") != -1)	{
+		return "OP"
+	}
+}
+
+//get charset
+function getHtmlCharset()	{
+	var charset = "euc-kr";
+	try	{
+		var metas = document.getElementsByTagName("meta");
+		for (var i = 0 ; i < metas.length ; i++)	{
+			var content = metas[i].content.toLowerCase();
+
+			if(content.indexOf("utf-8") > -1)	{
+				charset = "utf-8"
+				break;
+			}	else if(content.indexOf("euc-kr") > -1)	{
+				charset = "euc-kr"
+				break;
+			}
+		}
+	}	catch (e)	{}
+
+	return charset;
+}
+
+var BROWSER_TYPE; // 브라우저 타입 FF:FireFox IE:Internet Explorer
+var BROWSER_VERSION; // 브라우저 버젼
+
+function copy(code){
+	window.clipboardData.setData("Text", code);
+}
+
+//prdNo파라미터는 상품상세에서만 사용
+function postArticle(sns, objNo){
+	var url = "";
+	url+=_GNB_CONTEXT_PATH_+"/browsing/PostArticle.tmall?method=setPosting";
+
+	var winSize = '';
+	var option = '';
+
+	if("clog" == sns){
+		winSize = "width=400,height=364";
+		option = ",scrollbars=no,resizable=no";
+
+		var priceInfo = ""; // Clog공감상품 선물하기  가격정보
+		try{
+			if(typeof(__SEL_PRICE__) != "undefined" && __SEL_PRICE__.length > 0){
+				priceInfo = "&tag4=" + escape(encodeURIComponent(num_format(__SEL_PRICE__) + "원"));
+				url+=priceInfo;
+			}
+		} catch(e){}
+
+	}else if("facebook" == sns){
+		winSize = "width=600,height=400";
+		option = ",scrollbars=yes,status=yes,resizable=yes,toolbar=yes,location=yes,menubar=yes";
+	}else if("nate" == sns){
+		winSize = "width=500, height=540";
+	}else{
+		winSize = "width=1024,height=768";
+		option = ",scrollbars=yes,status=yes,resizable=yes,toolbar=yes,location=yes,menubar=yes";
+	}
+
+	var trackingPage = "";
+	if(typeof(__SNS_TRACKING_PAGE__) != "undefined" && __SNS_TRACKING_PAGE__.length > 0){
+		trackingPage = "&tracking="+__SNS_TRACKING_PAGE__;
+	}else{
+		trackingPage = "&tracking=etc";
+	}
+	url+=trackingPage;
+
+	url+="&sns="+sns;
+
+	var pathName = document.location.pathname;
+
+	var currentUrl = "";
+	if(typeof(__SNS_PRD_NO__) != "undefined" && __SNS_PRD_NO__.length > 0 && __SNS_TRACKING_PAGE__ == "spc"){
+		var urlTemp = "";
+		if(document.URL.indexOf("&toDayPrdNo") > 0){
+			urlTemp = document.URL.substring(0,document.URL.indexOf("&toDayPrdNo"));
+		}else{
+			urlTemp = document.URL;
+		}
+		currentUrl = "&url="+encodeURIComponent(urlTemp+"&toDayPrdNo="+__SNS_PRD_NO__);
+	}else if(pathName.indexOf("/SellerProductDetail.tmall") != -1 && objNo!= undefined && objNo != null){
+		currentUrl = "&url="+encodeURIComponent($URL.prd(objNo));
+	}else if(pathName.indexOf("/MallPlanDetail.tmall") != -1 && objNo!= undefined && objNo != null){
+		currentUrl = "&url="+encodeURIComponent($URL.plan(objNo));
+	}else{
+		currentUrl = "&url="+encodeURIComponent(document.URL);
+	}
+	url+=currentUrl;
+
+	var subject = "";
+	if(typeof(__SNS_SUBJECT__) != "undefined" && __SNS_SUBJECT__.length > 0){
+		subject = "[11번가] "+__SNS_SUBJECT__.replace(/[&]/g,"");
+		if(subject.length> 110){
+			subject = subject.substring(0,110)+"...";
+		}
+	}else{
+		subject = "[11번가] 쇼핑스트리트 ";
+	}
+	url+="&subject="+escape(encodeURIComponent(subject));
+
+	var win = window.open(url, '', winSize+option);
+}
+
+var jjimPrdNo = "";
+var jjimPrefix = "";
+
+var WishItemLayer = function(){
+	var id = ""; // 찜 버튼 ID
+	var layerId = ""; // 찜 레이어 ID
+	var $jjimBtnArea; // 찜 버튼 영역
+	var isRender = false; // 찜 레이어 생성 여부
+	var isApplyCss = true; // 찜 레이어의 css 적용 여부
+	try{
+		jQuery("li.listing_subtit .list_hgroup").css("z-index","1");
+	}catch(e){}
+
+	return {}
+}();
+
+//방문 수령지 위치 보기 팝업
+function _goVisitAddrPop(prdNo, memNo, addrSeq, mbAddrLocation){
+	var url = _GNB_CONTEXT_PATH_ + "/product/SellerProductDetail.tmall?method=getVisitAddrPopUp&prdNo="+ prdNo
+	+ "&memNo=" + memNo + "&addrSeq=" + addrSeq + "&mbAddrLocation=" + mbAddrLocation;
+
+	var height = 730;
+	var width = 630;
+
+	var str = "height=" + height + ",innerHeight=" + height
+			+ ",width=" + width + ",innerWidth=" + width
+			+ ",status=no, resizable=no, menubar=no, toolbar=no, location=no, directories=no, scrollbars=no";
+
+	if(window.screen){
+		var ah = screen.availHeight - 30;
+		var aw = screen.availWidth - 10;
+
+		var xc = (aw - width) / 2;
+		var yc = (ah - height) / 2;
+
+		str += ",left=" + xc + ",screenX=" + xc;
+		str += ",top=" + yc + ",screenY=" + yc;
+	}
+
+	var _win = window.open(url, "visitAddrPop", str);
+	_win.focus();
+}
+
+function goTopUrl(url, code){
+	goStatUrl(url, code);
+}
+
+function cately_view(par){
+	if($ID(par).style.display=="" ||$ID(par).style.display=="none"){
+		$ID(par).style.display="block";
+	}else{
+		$ID(par).style.display="none";
+	}
+}
+
+function global(code){
+	goStatUrl('https://globalshopping.11st.co.kr',code);
+}
+
+function goGSearch(v){
+	var f = document.forms["searchForm"];
+	f.prdTab.value="T";
+	f.dispCtgrNo.value = v;
+	f.submit();
+}
+
+var isAkcLayoutLoaded = false;
+var isSmtLayoutXBtnClicked = false;
+
+function setGnbData(renew){
+	var url = document.URL;
+	if(url.indexOf("www.11st.co.kr/mart11st/") != -1){
+		setGnbMart11stCtgrAll();	//카테고리 전체보기
+		setGnbMart11stCtgrGrp();	//메타카테고리  마우스오버시 대카레이어
+		setGnbMart11stCorner();		//주요코너(인기코너/혜택,마트 브랜드관)
+	}else if(url.indexOf("www.11st.co.kr/html/martMain.html") != -1){
+		setGnbMart11stCtgrAll();	//카테고리 전체보기
+		setGnbMart11stCtgrGrp();	//메타카테고리  마우스오버시 대카레이어
+		setGnbMart11stCorner();		//주요코너(인기코너/혜택,마트 브랜드관)
+	}else if(url.indexOf("www.11st.co.kr") != -1 && url.indexOf("www.11st.co.kr/mart11st/") == -1 && url.indexOf("www.11st.co.kr/mart/") == -1){
+		setGnbKwdAd();
+	}else if(url.indexOf("beauty.11st.co.kr/") != -1){
+		setGnbNewBeautyBanner();
+	}else if(url.indexOf("scinic.11st.co.kr/") != -1){
+		setGnbBeautyCtgrGrp();
+		setBtPopConnerBanner();
+	}else if(url.indexOf("tour.11st.co.kr") != -1){
+		setTrGnbBanner();
+	}else if(url.indexOf("ticket.11st.co.kr/") != -1){
+    setGnbKwdAd();
+	}else if(url.indexOf("search.11st.co.kr") != -1){
+		try{
+			if(!isIE6){
+			}
+		}catch(e){}
+	}else if(url.indexOf("books.11st.co.kr") != -1){
+	}else{
+		setGnbKwdAd();
+	}
+	try{
+		ADImpression();
+	}catch(e){}
+}
+
+function show_direct(){
+	var str = "바로가기 비접속중";
+	if(getBookMarkYn())
+		str = "바로가기 접속중";
+	$ID("gbox_text").innerHTML = str;
+}
+
+function chkKeywordEvent(keyword)	{
+	for (var i = arrEvents.length - 1; i > -1 ; i--)	{
+		if(arrEvents[i].goEventUrl(getInnocentWord(keyword)))	{
+			return true;
+		}
+	}
+	return false;
+}
+/* 키워드 광고 수동 처리 끝 */
+
+/* 풋터검색창 추가 */
+function goFooterSearch(){
+	var footerFormObj = document.forms["FooterSearchForm"];
+	var keyword = trim(footerFormObj.kwd.value);
+	if(footerFormObj.targetTab.value == "SL"){	 // 판매자 검색
+		footerFormObj.action = "https://search.11st.co.kr/SearchPrdAction.tmall";
+		footerFormObj.method.value = "getTotalSearchSeller";
+	}else if(footerFormObj.targetTab.value == "S"){ // 가게
+		footerFormObj.action = "https://search.11st.co.kr/SearchSellerShopAction.tmall";
+	}else if(footerFormObj.targetTab.value == "CH"){	// 뷰티11번가
+		footerFormObj.action = "https://beauty.11st.co.kr/TotalSearch.do";
+		footerFormObj.category.value = "cherrya";
+		footerFormObj.cmd.value = "productList";
+	}else if(footerFormObj.targetTab.value == "MO"){	// 도서11번가
+		footerFormObj.action = "https://book.11st.co.kr/TotalSearch.do";
+		footerFormObj.category.value = "morning365";
+		footerFormObj.cmd.value = "productList";
+	}else if(footerFormObj.targetTab.value == "TOUR11ST"){// 여행 11번가
+		footerFormObj.action = "https://tour.11st.co.kr/vertical/Tour11stSearchAction.tmall";
+	}else if(footerFormObj.targetTab.value == "TOUR"){// 여행
+		footerFormObj.action = "https://tour.11st.co.kr/vertical/Tour11stSearchAction.tmall";
+	}else if(footerFormObj.targetTab.value == "OVERSEAS"){// 해외호텔
+		footerFormObj.action = "https://tour.11st.co.kr/vertical/Tour11stSearchAction.tmall";
+	}else if(footerFormObj.targetTab.value == "DOMESTIC"){// 국내숙박
+		footerFormObj.action = "https://tour.11st.co.kr/vertical/Tour11stSearchAction.tmall";
+	}else if(footerFormObj.targetTab.value == "SEMANTIC"){// 시맨틱 검색
+		footerFormObj.action = "https://search.11st.co.kr/SemanticSearchAction.tmall";
+	}
+
+	if(keyword == ""){
+		alert("검색어를 입력하세요.");
+		footerFormObj.kwd.focus();
+		return;
+	}else if(chkKeywordEvent(keyword)){
+		return;
+	}else{
+		if(footerFormObj.targetTab.value == "D" && !IsNumeric(keyword)){
+			alert("운송번호 조회는 숫자(정수)만 가능합니다.");
+			footerFormObj.kwd.focus();
+		}else if(footerFormObj.targetTab.value == "D" && keyword.length < 10){
+			alert("운송번호 10자리 이상 입력하세요.");
+			footerFormObj.kwd.focus();
+		}else if(footerFormObj.targetTab.value == "N"){
+			if(!IsNumeric(keyword)){
+				alert("상품번호는 숫자(정수)만 가능합니다.");
+				footerFormObj.kwd.focus();
+			}else{
+				document.location.href = _GNB_CONTEXT_PATH_ + "/products/" + keyword;
+			}
+		}else if(footerFormObj.targetTab.value == "SL"){
+
+			footerFormObj.kwd.value = encodeKwd(keyword);
+			footerFormObj.submit();
+		}else{ // T/P/NP/M/I/S
+			setSearchTarget(footerFormObj.targetTab.value ,'f');
+			footerFormObj.kwd.value = encodeKwd(keyword);
+			footerFormObj.submit();
+		}
+	}
+}
+/* 풋터검색창 추가 끝 */
+
+//숫자에 세자리마다 콤마
+function getCommaString(val){
+	var pVal = val + "";
+	if(val == undefined || val == "" || !IsNumeric(val)) return 0;
+	if(pVal.length > 3){
+		var result = "";
+		for (var i = pVal.length, j = 0; i >= 0; i--, j++){
+			if(i != pVal.length && i%3 == 0 && i != 0){
+				result += ",";
+			}
+			result += pVal.charAt(j);
+		}
+		return result;
+	}else{
+		return pVal;
+	}
+}
+
+/*
+ * 동영상 광고 Viewer
+ */
+var AdMovieViewer_footerCommonJs = function(){
+
+	var prdNo = 0;
+	var movieNo = 0;
+	var videoNo = 0;
+	var btnPosX = 0;
+	var btnPosY = 0;
+	var viwerHtmlUrl = "/html/webCommon/adMovieViewer.html";
+
+	var $movieLayerWrap;
+	var $closeBtn;
+	var $movieFrame;
+
+	function getLayerPosition(obj){
+		var marginX = 60;
+		var marginY = -120;
+		btnPosX = jQuery(obj).offset().left + marginX;
+		btnPosY = jQuery(obj).offset().top + marginY;
+
+		if(btnPosX > 1000) btnPosX -= 400;
+
+	}
+
+	return {
+		open : function(vPrdNo, obj, minorSelYn){
+			if(minorSelYn == 'N'){
+				if(!funcCheckIsLogin()){
+					openLogin(1);
+					return;
+				}
+
+				if(funcCheckIsMinor()){
+					var conUrl = "https://www.11st.co.kr/jsp/common/checkAdultContents.jsp?referer=" + document.domain;
+					var conWin = window.open(conUrl, 'PreView', "width=800, height=320, scrollbars=no, status=no");
+					return;
+				}
+			}
+
+			getLayerPosition(obj);
+			prdNo = vPrdNo;
+			getAdMovieInfo();
+		}
+	}
+
+}();
+
+function goTotalSearch(keyword, code, popupNm){
+	doCommonStat(code);
+
+	if(popupNm != undefined){
+        var url = "https://search.11st.co.kr/Search.tmall?kwd=" + encodeKwdNew(keyword);
+		goStatPopUp(url, code, popupNm);
+	}else{
+		var gnbFormObj = document.forms["GNBSearchForm"];
+		gnbFormObj.kwd.value = encodeKwd(keyword);
+		gnbFormObj.targetTab.value = "T";
+		gnbFormObj.submit();
+	}
+}
+
+/*
+ * 선택상품 장바구니 담기 function :
+ * (찜한상품, 최근본상품, 구매한상품 3개 페이지 공통으로 사용하기 위해 옮김.)
+ *
+ * 2012.11.29 박성준
+ *
+ * formObjNm : target을 지정할 form명
+ * chkboxObj : 체크박스이름
+ * bcktYnObj : 장바구니 담기 가능상품 여부 오브젝트명
+ * prdNmObj : 상품명 오브젝트명
+ * prdTypCdObj : 상품타입 오브젝트명
+ * gblDlvYn : 전세계배송 여부
+ *
+ * 호출방법 : <a onclick="javascript:cart('orderList', 'prdCk', 'bcktYn', 'prdNm', 'prdTypCd', 'N', 'martNo');return false;" class="btn_kordeliver2">
+ */
+if(typeof cart == 'undefined')
+{
+	var cart = function (formObjNm, chkboxObj, bcktYnObj, prdNmObj, prdTypCdObj, gblDlvYn){
+		var obj = document.getElementsByName(chkboxObj);
+		var bcktYn = document.getElementsByName(bcktYnObj);
+		var prdNm = document.getElementsByName(prdNmObj);
+		var prdTypCd = document.getElementsByName(prdTypCdObj);
+		var prdNoList = "";
+		var bcktList = "";
+		var cnt = 0;
+		var bcktCnt=0;
+		var martCnt=0;
+
+		for(var i=0; i<obj.length; i++){
+			if(obj[i].checked == true){
+				if(cnt == 0){
+					prdNoList = obj[i].value;
+				}else{
+					prdNoList = prdNoList + "," + obj[i].value;
+				}
+
+				cnt++;
+			}
+		}
+
+		if(cnt == 0){
+			alert("상품을 선택해 주십시오.");
+			return "";
+		}
+
+		for(var j=0; j<bcktYn.length;j++){
+			//alert(j+'//'+prdNm[j].value+'//'+obj[j].checked+'//'+bcktYn[j].value);
+			if(obj[j].checked == true && (bcktYn[j].value == 'Y'||prdTypCd[j].value == '22')){
+				if(bcktCnt == 0){
+					bcktList = "**"+prdNm[j].value+"**";
+				}else{
+					bcktList = bcktList + "," + "\n**"+prdNm[j].value+"**";
+				}
+				bcktCnt++;
+			}
+		}
+		if(bcktCnt > 0){
+			alert(bcktList+"은 즉시구매만 가능합니다.\n상품상세로 이동하셔서 즉시구매 해주세요.");
+			return "";
+		}
+
+		for(var j=0; j<prdTypCd.length;j++){
+			if(obj[j].checked == true && prdTypCd[j].value == '11'){
+				martCnt++;
+			}
+		}
+		if(martCnt > 0){
+			if(!funcCheckIsLogin()){
+				openLogin(1);
+				return;
+			}
+		}
+
+		var confirmMessage = "선택한 상품을 국내배송 장바구니에 담으시겠습니까?";
+		if(gblDlvYn == 'Y'){
+			confirmMessage = "선택한 상품을 전세계배송 장바구니에 담으시겠습니까?";
+		}
+
+		if(!confirm(confirmMessage)){ return; }
+
+		//마트 상품일 경우 장바구니 미적용 여부체크(현재 홈플러스만 적용)
+		if(martCnt > 0){
+			var homeplusAlertMessage = '선택하신 상품중에 장바구니에 담을 수 없는 상품이 포함되어 있습니다.\n(마트상품의 경우 상품상세 페이지에서 장바구니 담기를 진행해 주세요)';
+			if(gblDlvYn == 'Y'){
+				homeplusAlertMessage = '선택하신 상품중에 전세계배송이 불가능한 상품이 포함되어 있습니다';
+			}
+			var cartDlvMartNo = document.getElementsByName('cartDlvMartNo');	//공통로직이므로 인자추가보다는 name값 fix로 선택, 장바구니 미적용 할경우 해당 martNo 네이밍 사용
+			for(var j=0; j<cartDlvMartNo.length;j++){
+				if(obj[j].checked == true && cartDlvMartNo[j].value == '5'){
+					alert(homeplusAlertMessage);
+					return;
+				}
+			}
+		}
+
+		var formObj = document.forms[formObjNm];
+		formObj.target = "hiddenFrame";
+		formObj.action = "https://buy.11st.co.kr/cart/CartAction.tmall?method=getRegMultiCart&arrPrdNo="+prdNoList+"&accountBar=T&gblDlvYn=" + gblDlvYn;
+		formObj.submit();
+	}
+}
+
+function getCommaSplit(srcNumber){
+	var txtNumber = '' + srcNumber;
+	if(isNaN(txtNumber) || txtNumber == ""){
+
+	}else{
+		var rxSplit = new RegExp('([0-9])([0-9][0-9][0-9][,.])');
+		var arrNumber = txtNumber.split('.');
+		arrNumber[0] += '.';
+
+		do {
+			arrNumber[0] = arrNumber[0].replace(rxSplit, '$1,$2');
+		} while (rxSplit.test(arrNumber[0]));
+
+		if(arrNumber.length > 1){
+			return arrNumber.join('');
+		}else{
+			return arrNumber[0].split('.')[0];
+		}
+	}
+}
+
+var showFlag = false;
+var quickFlag = false;
+
+FooterComm.prdImgToggle = {
+	info: {ver: 1.0, author: "ms.song", desc: "11st gif product images controll util"},
+	isFirst: true,
+	useTrace: true,
+	isAni: true,
+	selector: ".pub_photo img, .dp_photo img, .thumb img, div[name=prdPhoto] img",
+	intObj: ""
+};
+
+/**
+ * ToastBanner (inc_footer_data_v6에서 이관함. ms.song)
+ * 주문서에서 htmlToastBanner 객체를 사용하고 있기 때문에, FooterComm 을 추가하기 전까지 에러 방지 목적으로 htmlToastBanner를 할당해 둠.
+ */
+var htmlToastBanner = FooterComm.htmlToastBanner = {
+	version: "1.1",
+	author: "ms.song, ms.song@11st.co.kr",
+	desc: "토스트배너 wrapper및 motion을 구성한다.",
+	since: "2011",
+	info: "inc_footer_data_v6.js와 함께 사용",
+	$wrapperHeight: 0, /* for IE6 */
+	extraPixcel4IE6: 10,
+	bottomLimit4IE6: 0,
+	$wrapper: "",
+	$contWrap: "",
+	$toastTitle: "",
+	$closeBtn: "",
+	$downBtn: "",
+	$closeToday: "",
+	$window: "",
+	bodyHeight: "",
+	isIE6: false,
+	timoutObj: "",
+	contId: "",
+	bannerTitle: "",
+	bannerImg: "",
+	bannerLink: "",
+	bannerHTML: "",
+	contentsType: "I", // default 배너 (I :배너, C : 텍스트+배너, T : 텍스트)
+	useCloseToday: "",
+	closeTodayCallBack: "",
+	clickCallback: "",
+	impressionCallBack: "",
+	target: "",
+	useToast: false,
+	isRandom: false,
+	dispRnk: "",
+	setObj: function(){
+		this.$wrapper = jQuery("#toastBannerWrap");
+		this.$contWrap = jQuery("#toastContWrap");
+		this.$toastTitle = jQuery("#toastTitle");
+		this.$closeBtn = jQuery("#closeBtn");
+		this.$downBtn = jQuery("#downBtn");
+		this.$closeToday = jQuery("#closeToday");
+		this.$window = jQuery(window);
+		this.bodyHeight = jQuery("body").height();
+	},
+	init: function(){
+		if(this.useToast){
+			var that = this;
+			this.setObj();
+			this.createWrapper();
+			this.initIE6();
+			this.setContents();
+			this.dispCloseToday();
+			this.setEventHandler();
+			setTimeout(function(){
+				that.upBanner();
+			}, 500);
+		}
+	},
+	setBannerData: function(data){
+		this.useToast = data.useToast;
+		this.isRandom = data.isRandom;
+
+		if(data.imgBanner && data.imgBanner.length > 0){
+			var idx = 0;
+			if(this.isRandom){
+				idx = Math.floor(Math.random() *  data.imgBanner.length);
+			}
+
+			this.contId = this.getObjPropVal("contId", data.imgBanner[idx]);
+			this.bannerTitle = this.getObjPropVal("title", data.imgBanner[idx]);
+			this.bannerImg = this.getObjPropVal("imgUrl", data.imgBanner[idx]);
+			this.bannerLink = this.getObjPropVal("link", data.imgBanner[idx]);
+			this.bannerHTML = this.getObjPropVal("html", data.imgBanner[idx]);
+			this.contentsType = this.getObjPropVal("type", data.imgBanner[idx]);
+			if(this.contentsType == null)  this.contentsType = "I";
+		}
+
+		this.useCloseToday = this.isUndefined(data.useCloseToday) ? true : data.useCloseToday;
+		this.closeTodayCallBack = data.closeTodayCallBack;
+		this.target = data.target;
+		this.clickCallback = data.clickCallBack;
+		this.impressionCallBack = data.impressionCallBack;
+		this.dispRnk = data.dispRnk;
+
+		// 일단 이미지형만 처리, 이미지와 링크가 없다면, 토스트 노출하지 않는다.
+		if(this.useToast && !(this.bannerImg || this.bannerHTML)){
+			this.useToast = false;
+		}
+	},
+	getObjPropVal: function(key, obj){
+		var rtnVal = null;
+		var existObj = !this.isUndefined(obj);
+		if(existObj){
+			try {
+				rtnVal = obj[key].indexOf("null") === -1 ? obj[key] : null; // "null"을 반환하는 BO가 있어, string "null"을 object null로 변경한다.
+				if(_protocol === "https:"){
+					rtnVal = rtnVal.split("https://i.011st.com").join("https://image.11st.co.kr");
+				}
+			} catch(e){}
+		}
+		return rtnVal;
+	},
+	isUndefined: function(obj){
+		return (typeof obj === "undefined");
+	},
+	createWrapper: function(){
+		var wrapperFrag = document.createDocumentFragment();
+
+		var divAllWrap = document.createElement("div");
+		var $divAllWrap = jQuery(divAllWrap).addClass("toastbnr_wrap").attr("id", "toastBannerWrap");
+
+		var $divTitle = jQuery("<h3 />", {id: "toastTitle"});
+
+		var toastTitleName = "";
+
+		if(this.bannerTitle && this.bannerTitle != ""){
+			toastTitleName = this.bannerTitle;
+		}else{
+			if("01" == this.dispRnk){ // 미니몰쿠폰 토스트배너 Title
+				toastTitleName = "단골쿠폰 알림"
+			}else{ // 마케팅 토스트배너 Title
+				toastTitleName = "고객님께 드리는 특별한 선물";
+			}
+		}
+
+		var $spanTitleText = ' <button type="button" id="downBtn">'+toastTitleName+'</button>';
+		$divTitle.append($spanTitleText);
+
+		var $divCont =  jQuery("<div />", {"class": "toast_inner", id: "toastContWrap"});
+
+		var $divTodayWrap = jQuery("<div />", {"class": "close_wrap"});
+		var $divTodayText = jQuery("<label />", {id: "closeToday"}).attr('for', 'tClose');
+		$divTodayText.append('<input type="checkbox" id="tClose" checked="">오늘 다시 열지 않기</input>');
+		var $divTodayBtn = ' <button type="button" id="closeBtn">닫기</button>';
+		$divTodayWrap.append($divTodayText).append($divTodayBtn);
+
+		$divAllWrap.append($divTitle).append($divCont).append($divTodayWrap);
+
+		wrapperFrag.appendChild(divAllWrap);
+		document.body.appendChild(wrapperFrag);
+
+		this.$contWrap = $divCont;
+		this.$wrapper = $divAllWrap;
+		this.$downBtn = jQuery('#downBtn');
+		this.$closeBtn = jQuery('#closeBtn');
+		this.$closeToday = $divTodayText;
+	},
+	initIE6: function() {},
+	getTargetPosition: function(){
+		var bottomPosition = 0;
+		if(this.isIE6){
+			bottomPosition = this.bodyHeight - (this.$window.scrollTop() + this.$window.height() + this.$wrapperHeight);
+			// 배너가 무한대로 내려가는걸 막는다.
+			if(this.bottomLimit4IE6 >= bottomPosition){
+				bottomPosition = this.bottomLimit4IE6;
+			}
+		}
+		return bottomPosition;
+	},
+	/* 오늘하루 그만보기 사용여부 */
+	dispCloseToday: function(){
+		var that = this;
+		if(!this.useCloseToday){
+			this.$closeToday.css("display", "none");
+		}
+	},
+	injectionHTMLCont: function(){
+		this.$contWrap.append(this.bannerHTML);
+	},
+	setContents: function(){
+		if(this.contentsType == "C" || this.contentsType == "T"){
+			this.injectionHTMLCont();
+		}else if(this.contentsType == "I"){
+			this.injectionImgCont();
+		}
+
+		if(typeof this.impressionCallBack === "function"){
+			try {
+				this.impressionCallBack();
+			} catch(e){}
+		}
+	},
+	clearTimeoutObj: function(){
+		if(this.timoutObj){
+			clearTimeout(this.timoutObj);
+			this.timoutObj = null;
+		}
+	},
+	stopAnimation: function(){
+		this.$wrapper.stop();
+	},
+	setEventHandler: function(){
+		var that = this;
+		this.$wrapper.bind({
+			"mouseenter": function(){
+				that.upBanner({callback: null});
+			},
+			"mouseleave": function(){
+				that.downBanner();
+			}
+		});
+		this.$contWrap.click(function(){
+			/* tracking 펑션 실행을 위함. 뻑나면 걍 흐름.*/
+			if(typeof that.clickCallback === "function"){
+				try {
+					that.clickCallback();
+				} catch(e){}
+			}
+			setTimeout(function(){that.redirectPage()}, 500);
+
+			return false;
+		});
+		this.$closeBtn.click(function(e){
+			if(jQuery("#tClose").is(":checked") == true){
+				if(typeof that.closeTodayCallBack === "function"){
+					try {
+						that.closeTodayCallBack();
+					} catch(e){}
+				}
+			}else{
+				e.stopPropagation();
+				that.$wrapper.fadeOut("fast");
+			}
+			return false;
+		});
+		this.$downBtn.click(function(e){
+			that.downBanner({duration: 500});
+			return false;
+		});
+		this.$window.bind({
+			"scroll resize": function(){
+				if(that.isIE6){
+					var $this = jQuery(this);
+					if($this.scrollTop() >= that.bodyHeight){
+						$this.scrollTop(that.bodyHeight);
+						return;
+					}
+					var toastNewTop = that.getTargetPosition();
+					that.$wrapper.css("bottom", toastNewTop + "px");
+				}
+			}
+		});
+	},
+	redirectPage: function(){
+		var targetObj = document;
+		if(this.target === "_blank"){
+			targetObj = window.open("", "");
+		}
+		targetObj.location.href = this.bannerLink;
+	},
+	moveBanner: function(data){
+		var targetP, dura, callBack, thisObj, that, timeout;
+		that = this;
+		targetP = data.targetPosition;
+		dura = data.duration;
+		callback = data.callback;
+		timeout = data.timeout ? data.timeout : 0;
+
+		this.clearTimeoutObj();
+		this.stopAnimation();
+
+		this.$wrapper.animate({
+			bottom: targetP + "px"
+		}, {
+			duration: dura,
+			complete: function(){
+				if(callback === null || callback === ""){
+					return;
+				}
+				var fn;
+				if(typeof callback === "function"){
+					fn = function(){callback.call(that)};
+
+				}else if(typeof callback === "string"){
+					fn = function(){that[callback]()};
+				}
+
+				that.timoutObj = setTimeout(fn, timeout);
+			}
+		});
+	},
+	getMergedOption: function(defaultOpt, newOpt){
+		var rtnOption = defaultOpt;
+		if(newOpt){
+			rtnOption = jQuery.extend({}, defaultOpt, newOpt);
+		}
+		return rtnOption;
+	},
+	dispWrapper: function(boolVal){
+		var dispStyleVal = boolVal ? "block" : "none";
+		this.$wrapper.css("display", dispStyleVal);
+	},
+	downBanner: function(newOption){
+		var BANNER_DOWN = -185
+		var position = BANNER_DOWN + this.getTargetPosition();
+		var option = {targetPosition: position, duration: 1000, callback: this.removeBanner, timeout:5000};
+		option = this.getMergedOption(option, newOption);
+
+		this.moveBanner(option);
+	},
+	upBanner: function(newOption){
+		this.dispWrapper(true);
+		var BANNER_UP = 0;
+		var position = BANNER_UP + this.getTargetPosition();
+		var option = {targetPosition: position, duration: 500, callback: this.downBanner, timeout: 10000};
+		option = this.getMergedOption(option, newOption);
+		this.moveBanner(option);
+	},
+	removeBanner: function(){
+		var BANNER_REMOVE = -200
+		var position = BANNER_REMOVE + this.getTargetPosition();
+		this.moveBanner({targetPosition: position, duration: 1000, callback: this.dispWrapper});
+	}
+};
+
+var TB_WWW_URL = window.document.location.protocol + "//www.11st.co.kr";
+
+/* 토스트 배너 데이터 컨트롤러*/
+FooterComm.toastBnnr = {
+	init : function(toastState){
+		// 영문,국문 체크
+		var isKor = TMCookieUtil.getCookie(2, "CONN_IP_LOC") !== "FOR";
+
+		// 토스트배너 실행 (쿠키 체크 후, 설정된 배너 노출)
+		var toastState = this.getState();
+		if(toastState > 0){
+			if(isKor){
+				// toastState = 1: 비로그인 상태, 2: 로그인 상태
+				switch(toastState){
+					case 1 :
+						this.pcidToastBnnr();
+						break;
+					case 2 :
+						this.memIdToastBnnr();
+						break;
+					default:
+						break;
+				}
+			}
+		}
+	},
+	getState: function(){
+		var toastState = 0;
+
+		if(!isToastBnnr){ // isToastBnnr는 headerSub에 정의되어 있으며, webpagse의 파라미터로 결정된다.
+			return toastState;
+		}
+
+		if(!HeaderComm.funcCheckIsLogin()){
+			toastState = 1;
+		}else{
+			toastState = 2;
+		}
+
+		return toastState;
+	},
+
+	/* PCID 별 토스트 배너 */
+	pcidToastBnnr : function(){
+		if(this.getToastDataCheck(0)){
+			var that = this;
+			var toastActDataArr = this.getToastActData();
+			var dispCnt = parseInt(toastActDataArr[0]);
+
+			// 최대 4회까지 노출
+			if(dispCnt < 4 && toastActDataArr[1] == "N"){
+				var that = this;
+				var dataUrl = TB_WWW_URL + "/toastBanner/ToastBannerAjaxAction.tmall?method=getPcidToastBanner";
+				jQuery.ajax({
+					url: dataUrl,
+					dataType: "jsonp",
+					scriptCharset: "utf-8",
+					success: function(data){
+						var bannerData = data.jsonPCID;
+
+						if(bannerData.length > 0){
+
+							var targetDataIdx = that.getNextDispToastIdx(bannerData, parseInt(toastActDataArr[2]));
+
+							if(targetDataIdx > -1){
+								var targetData = bannerData[targetDataIdx];
+
+								if(targetData != ""){
+									// 캠페인 ID별 1일 1회 노출 제한 로직 추가
+									that.setDailyViewHist(targetData.contId);
+
+									FooterComm.htmlToastBanner.setBannerData({
+										useToast: true,
+										useCloseToday: true,
+										imgBanner: [targetData],
+										closeTodayCallBack: function(){
+											jQuery("#toastBannerWrap").hide();
+
+											that.setToastActData(dispCnt, "Y", targetDataIdx, toastActDataArr[3], toastActDataArr[4], toastActDataArr[5]);
+										},
+										clickCallBack: function(){
+											if(targetData.clickYn == "N"){
+												that.toastMsgUpdateCallBack ("Pcid", targetData.contId, "C");
+											}
+										},
+										impressionCallBack: function(){
+											dispCnt++;
+
+											that.setToastActData(dispCnt, "N", targetDataIdx, toastActDataArr[3], toastActDataArr[4], toastActDataArr[5]);
+
+											if(targetData.dispYn == "N"){
+												that.toastMsgUpdateCallBack ("Pcid", targetData.contId, "D");
+											}
+										},
+										target: "_blank",
+										dispRnk: targetData.dispRnk
+
+									});
+
+									FooterComm.htmlToastBanner.init();
+								}
+							}
+
+						//데이터가 없는 경우 더이상 호출 하지 않음(브라우저 종료시까지)
+						}else{
+							var toastDataCheck = TMCookieUtil.getSubCookie(0, "TB_DATA_CHK");
+
+							TMCookieUtil.add(0, "TB_DATA_CHK", "N:" + toastDataCheck.split(":")[1]);
+						}
+					}
+				});
+			}
+		}
+	},
+
+	/* MEMID 토스트 배너 */
+	memIdToastBnnr : function(){
+		if(this.getToastDataCheck(1)){
+			var that = this;
+			var toastActDataArr = this.getToastActData();
+			var dispCnt = parseInt(toastActDataArr[3]);
+
+			jQuery.ajax({
+				url: TB_WWW_URL + "/toastBanner/ToastBannerAjaxAction.tmall?method=getMemIdToastBanner",
+				dataType: "jsonp",
+				scriptCharset: "utf-8",
+				success: function(data){
+					var bannerData = data.jsonMEMID;
+
+					// 최대 4회까지 노출
+					if(dispCnt < 4 && toastActDataArr[4] == "N" && bannerData.length > 0){
+
+						var targetDataIdx = that.getNextDispToastIdx(bannerData, parseInt(toastActDataArr[5]));
+
+						if(targetDataIdx > -1){
+							var targetData = bannerData[targetDataIdx];
+
+							if(targetData != ""){
+								// 캠페인 ID별 1일 1회 노출 제한 로직 추가
+								that.setDailyViewHist(targetData.contId);
+
+								FooterComm.htmlToastBanner.setBannerData({
+									useToast: true,
+									useCloseToday: true,
+									imgBanner: [targetData],
+									closeTodayCallBack: function(){
+										jQuery("#toastBannerWrap").hide();
+
+										that.setToastActData(toastActDataArr[0], toastActDataArr[1], toastActDataArr[2], dispCnt, "Y", targetDataIdx);
+									},
+									clickCallBack: function(){
+										if(targetData.clickYn == "N"){
+											that.toastMsgUpdateCallBack ("MemId", targetData.contId, "C");
+										}
+									},
+									impressionCallBack: function(){
+										dispCnt++;
+
+										that.setToastActData(toastActDataArr[0], toastActDataArr[1], toastActDataArr[2], dispCnt, "N", targetDataIdx);
+
+										if(targetData.dispYn == "N"){
+											that.toastMsgUpdateCallBack ("MemId", targetData.contId, "D");
+										}
+									},
+									target: "_blank",
+									dispRnk: targetData.dispRnk
+
+								});
+
+								FooterComm.htmlToastBanner.init();
+
+								that.issuLoyaltyCms(); //쿠폰 발급
+							}
+						}
+					//데이터가 없는 경우 더이상 호출 하지 않음(브라우저 종료시까지)
+					}else{
+						var toastDataCheck = TMCookieUtil.getSubCookie(0, "TB_DATA_CHK");
+
+						TMCookieUtil.add(0, "TB_DATA_CHK", toastDataCheck.split(":")[0] + ":N");
+					}
+				}
+			});
+		}
+	},
+	issuLoyaltyCms: function(){
+		var $link = jQuery("<a />", {href: TB_WWW_URL+"/loyalty/loyaltyCmsDtls.tmall?method=cmsDtlsList"});
+		var img = new Image();
+		img.src = WWW_URL + "/img/toast/alt_img.jpg";
+		$link.append(img);
+
+		jQuery.ajax({
+			url: TB_WWW_URL+"/loyalty/loyaltyCms.tmall?method=issueAllCmsLoyalty",
+			dataType: "jsonp",
+			success: function(data){},
+			error: function(){}
+		});
+	},
+	toastMsgUpdateCallBack: function(target, cmCode, type){
+		var setUrl = TB_WWW_URL+"/toastBanner/ToastBannerAjaxAction.tmall?method=update"+target+"ToastBanner&typeCode="+type+"&cmCode="+cmCode;
+		jQuery.ajax({url: setUrl,dataType: "script"});
+	},
+	getToastActData: function(){
+		// 토스트배너 노출 정보
+		var toastActData = TMCookieUtil.getSubCookie(1, "TB_ACT_DATA");
+
+		var toastActDataArr = new Array();
+
+		if(toastActData == ""){
+			toastActData = "0:N:-1:0:N:-1"; //PCID노출회수:todayClose:마지막노출토스트배너Index:MEMID노출회수:todayClose:마지막노출토스트배너Index
+
+			TMCookieUtil.add(1, "TB_ACT_DATA", toastActData);
+		}
+
+		toastActDataArr = toastActData.split(":");
+
+		return toastActDataArr;
+	},
+	//토스트배너 데이터 존재 여부 검사
+	getToastDataCheck: function(checkIdx){
+		var toastDataCheck = TMCookieUtil.getSubCookie(0, "TB_DATA_CHK");
+
+		if(toastDataCheck == ""){
+			toastDataCheck = "Y:Y"; //PCID 데이터 존재 여부 : MEMID 데이터 존재 여부
+			TMCookieUtil.add(0, "TB_DATA_CHK", toastDataCheck);
+		}
+
+		var toastDataCheckArr = toastDataCheck.split(":");
+
+		if(toastDataCheckArr[checkIdx] == "Y"){
+			return true;
+		}else{
+			return false;
+		}
+	},
+	setToastActData: function(pcidCnt, pcidClose, pcidLastIdx, memidCnt, memidClose, memidLastIdx){
+		TMCookieUtil.add(1, "TB_ACT_DATA", pcidCnt + ":" + pcidClose + ":" + pcidLastIdx + ":" + memidCnt + ":" + memidClose + ":" + memidLastIdx);
+	},
+	getNextDispToastIdx: function(dataArr, lastDispToastIdx){
+		var targetDispToastIdx = lastDispToastIdx;
+		var dailyViewHist = TMCookieUtil.getSubCookie(1, "TB_DAILY_VIEW_TOAST_HST");
+
+		for(; targetDispToastIdx < dataArr.length;){
+			targetDispToastIdx++;
+
+			//캠페인 ID별 1일 1회 노출 제한 로직
+			if(targetDispToastIdx < dataArr.length && dailyViewHist.indexOf("[" + dataArr[targetDispToastIdx].contId + "]") != -1){
+				continue;
+			}else{
+				break;
+			}
+		}
+
+		if(targetDispToastIdx >= dataArr.length){
+			targetDispToastIdx = -1;
+		}
+
+		return targetDispToastIdx;
+	},
+	setDailyViewHist : function(contId){
+		var dailyViewHist = TMCookieUtil.getSubCookie(1, "TB_DAILY_VIEW_TOAST_HST");
+		dailyViewHist += "[" + contId + "]";
+		TMCookieUtil.add(1, "TB_DAILY_VIEW_TOAST_HST", dailyViewHist);
+	}
+};
+try {
+	jQuery(function(){
+		FooterComm.toastBnnr.init();
+	});
+} catch(e){}
+
+/**
+ * 상품 이미지 더보기_개편 2013
+ */
+FooterComm.ImageSplit = function(){
+	var imgUrl = '';
+	var largeImgList = [];
+	var smallImgList = [];
+	var size = 0;
+	var selectedIndex = 0;
+	var startIndex = 0;
+	var showLimit = 5;
+	var $target = '';
+	var timer = '';
+	var prdImg = '';
+	var prdNo = 0;
+	var version = '';
+	var openList = [];
+
+
+	var maxZindex = 0
+	var zIndex = {};
+
+	try{
+		jQuery('div[name=imageSplit]', '#contsWrap').live({
+			mouseenter : function(thisObj){
+				$target = jQuery(thisObj.currentTarget);
+				prdNo = $target.attr('prdNo');
+				prdImg = $target.attr('img');
+				version = '1.0';
+				getImageCutUrl();
+			}
+		});
+
+		jQuery('div[name=prdPhotoMoreView]', '#contsWrap').live({
+			mouseenter : function(thisObj){
+				$target = jQuery(thisObj.currentTarget);
+				prdNo = $target.attr('prdNo');
+				prdImg = $target.attr('img');
+				version = '1.1';
+				getImageCutUrl();
+			}
+		});
+
+		jQuery('div.pub_photo:has(div[name=imageSplit])', '.listtype_wrap').live({
+			mouseleave : function(thisObj){
+				var $targetObj = jQuery(thisObj.currentTarget);
+				jQuery('.img_moreview', $targetObj).css('display', 'none');
+				jQuery('.img_moreview', $targetObj).css('z-index', 1);
+				jQuery($target).parent('div').css('z-index', 1);
+				jQuery($target).parents('div.title_area').css('z-index', 2);
+				jQuery($target).parents('div.category_tblwrap').css('z-index', 2);
+				selectedIndex = 0;
+				startIndex = 0;
+				largeImgList = [];
+				smallImgList = [];
+			}
+		});
+
+		jQuery('div[name=prdPhoto]:has(div[name=prdPhotoMoreView])', '.listing_wrap').live({
+			mouseleave : function(thisObj){
+				var $targetObj = jQuery(thisObj.currentTarget);
+				var $moreViewImg = jQuery('.moreview_img', $targetObj);
+
+				if($moreViewImg.css('display') != 'none'){
+					var openListKey = '' + jQuery('div[name=prdPhotoMoreView]', $targetObj).attr('prdNo');
+					openList[openListKey] = false;
+
+					var $prdArea = jQuery($targetObj).parent();
+					var $ulArea = $prdArea.parent();
+					$prdArea.css('z-index', '');
+					$ulArea.css('z-index', '');
+
+					window.setTimeout(
+							function(){
+								if(!openList[openListKey]){
+									$moreViewImg.hide().css('z-index', '');
+								}
+							}
+							, 200
+						);
+
+					selectedIndex = 0;
+					startIndex = 0;
+					largeImgList = [];
+					smallImgList = [];
+				}
+			}
+		});
+
+		jQuery('button[name=split_btn_next]').live({
+			click : function(){
+				if(selectedIndex == 5){
+					selectedIndex = 0;
+					startIndex = 0;
+				}else{
+					selectedIndex = 5;
+					startIndex = 5;
+				}
+
+				drawBigImage();
+				drawSplitImage();
+			}
+		});
+
+		jQuery('li[name=small_img]').live({
+			mouseenter : function(thisObj){
+
+				var $targetObj = jQuery(thisObj.currentTarget);
+				selectedIndex = jQuery('li[name=small_img]', $target).index($targetObj);
+				drawBigImage();
+
+			}
+		});
+
+	}catch(e){}
+
+	var getImageCutUrl = function(){
+		try{
+			size = 0;
+			largeImgList = [];
+			smallImgList = [];
+
+			size = smallImgList.length;
+
+			if(smallImgList.length > 0 && largeImgList.length > 0){
+				drawBigImage();
+				drawSplitImage();
+			}else{
+				var url = _SEARCH_ACTION_URL_ + '?method=getProductImageSplit&version=' + version + '&imgUrl=' + prdImg + '&callBack=?';
+				jQuery.getJSON(url, function(data){
+					if(data.success){
+						largeImgList = data.LARGE_IMG_LIST;
+						smallImgList = data.SMALL_IMG_LIST;
+						size = smallImgList.length;
+						if(smallImgList.length > 0 && largeImgList.length > 0){
+							drawBigImage();
+							drawSplitImage();
+							var zIdx = zIndex.max();
+							jQuery('.img_moreview, .moreview_img', $target).css({'display':'block', 'z-index': zIdx});
+
+							if(version == '1.1'){
+								var $photoArea = jQuery($target).parent();
+								var $prdArea = $photoArea.parent();
+								$photoArea.css('z-index', zIdx);
+								$prdArea.css('z-index', zIdx);
+							}else{
+								jQuery($target).parent('div').css('z-index', zIdx);
+								jQuery($target).parents('div.title_area').css('z-index', zIdx);
+								jQuery($target).parents('div.category_tblwrap').css('z-index', zIdx);
+							}
+						}
+					}
+				});
+			}
+
+			openList['' + prdNo] = true;
+		} catch(e){}
+	};
+
+	var drawSplitImage = function(){
+		var count = 0;
+		jQuery('li[name=small_img]', $target).css('display', 'none');
+
+		for(var index=0; index < size && index < showLimit; index++){
+			try{
+				if(startIndex + index < size){
+					var $imgObj = jQuery(jQuery('img[name=image]', $target).get(startIndex + index));
+					var src = smallImgList[startIndex + index];
+					if($imgObj.attr('src').indexOf('/img/common/blank.gif') != -1 && src != undefined){
+
+						if(src != undefined && src.indexOf(_UPLOAD_URL_) < 0){
+							src = _UPLOAD_URL_ + src;
+						}
+
+						$imgObj.attr('src', src);
+					}
+					$imgObj.parent('a').parent('li').css('display', '');
+				}else{
+					var $imgObj = jQuery(jQuery('img[name=image]', $target).get(startIndex + index));
+					$imgObj.parent('a').parent('li').css('display', 'none');
+				}
+
+			}catch(e){}
+		}
+
+		if(size > 5){
+			jQuery('div[name=btn_ctrl]', $target).css('display', 'block');
+		}
+	};
+
+	var drawBigImage = function(){
+		var largeImgUrl = largeImgList[selectedIndex];
+
+		if(largeImgUrl != undefined && largeImgUrl.indexOf(_UPLOAD_URL_) < 0){
+			largeImgUrl = _UPLOAD_URL_ + largeImgUrl;
+		}
+
+		jQuery('img[name=bigImage]', $target).attr('src', largeImgUrl);
+	};
+}();
+
+//Go Top, Bottom
+FooterComm.scrollControl = {};
+FooterComm.fnSrchPrdLike = function(prdNo, likeFrom, prdTypCd){
+	if(prdTypCd == "20"){
+		alert("다운로드 상품은 좋아요가 적용되지 않습니다.");
+		return;
+	}
+
+	if(prdNo == ''){
+		return;
+	}
+	if(!funcCheckIsLogin()){
+		openLogin(5, "afterLikeSrchLogin");
+		return;
+	}else{
+		FooterComm.likePrd.callback.init(prdNo, likeFrom, prdTypCd);
+
+		jQuery.ajax({
+	        url : _GNB_CONTEXT_PATH_ + '/commons/LikeAjaxAction.tmall?method=addLikeProduct&likePrdNo=' + prdNo + '&callBack=FooterComm.likePrd.callback.execute'
+			, dataType: 'jsonp'
+			, scriptCharset: 'utf-8'
+	    });
+		//jQuery.getJSON(url, callback);
+	}
+}
+
+FooterComm.likePrd = {};
+FooterComm.likePrd.callback = function(){
+	var prdNo;
+	var likeFrom = '';
+	var prdTypCd;
+
+	var $likeAreaWrap;
+	var $bindParentObj;
+	var $zindexParentObj;
+
+	var callback = function(data){
+		if(data.resultCd == "success"){
+			$likeAreaWrap.addClass("checked");
+			success(data);
+		}else if(data.resultCd == "failure"){
+			alert("일시적인 오류가 발생했습니다. 다시 시도해 주십시요.");
+		}else if(data.resultCd == "already"){
+			$likeAreaWrap.addClass("checked");
+			alert("이미 좋아요 한 상품입니다.");
+
+			var likeInfoHtml = "<span class=\"likethis_txt\">좋아요</span>" + data.likeCntString;
+			if(data.likeCnt > 9999){
+				likeInfoHtml += "<span class=\"num_plus\">+</span>";
+			}
+			jQuery("button", $likeAreaWrap).html(likeInfoHtml);
+
+			if(likeFrom == "SOHOLIST"){
+				//소호 리스트형 리스팅
+				if(data.likeCnt > 999){
+					$likeAreaWrap.parent("div").addClass("likethis_plus");
+				}
+			}else if(likeFrom == "DEAL"){
+				//쇼킹딜 리스팅
+				$likeAreaWrap.attr("class","like_this checked").parent("div").attr("class","like_info");
+			}
+
+		}else if(data.resultCd == "login"){
+			openLogin(5, "afterLikeSrchLogin");
+			return;
+		}else if(data.resultCd == "isEmailAuth"){
+			alert("죄송합니다. 이메일 인증회원은 국문사이트 상품의 좋아요♥가 불가합니다.\n영문 사이트 혹은 로그아웃 후 비회원 구매하기를 통해 주문해 주시기 바랍니다.");
+		}else if(data.resultCd == "isMinor"){
+			var conUrl = _GNB_CONTEXT_PATH_ + "/jsp/common/checkAdultContents.jsp?referer=" + document.domain;
+			window.open(conUrl, "PreView", "width=800, height=320, scrollbars=no, status=no");
+		}
+	};
+
+	var success = function(data){
+		var _conf = {
+			action : "set",
+			method : "zzim",
+			prdNoList : prdNo
+		};
+
+		try{
+			HeaderComm.callHotClick(_conf);
+		}catch (e){}
+
+		// view 컨트롤
+		FooterComm.likePrd.display(prdNo, likeFrom, prdTypCd, data);
+
+		callRecopick(data);
+	};
+
+	var callRecopick = function(data){
+		
+		if(data.prdNo && data.mid && data.lCtgrNm && data.mCtgrNm && data.sCtgrNm){
+			var paramObj = {
+				process : FooterComm.recopick.process.like, 
+				domain : FooterComm.recopick.domain.common, 
+				items	: [{
+					id: data.prdNo,
+					c1: data.lCtgrNm,
+					c2: data.mCtgrNm,
+					c3: data.sCtgrNm
+				}],
+				mid : data.mid
+			}
+
+			if(data.addDispCtgrNo && data.brandCd){
+				var item = paramObj.items[0];
+				item.bc1 = data.addDispCtgrNo;
+				item.brand = data.brandCd;
+			}
+
+			FooterComm.recopick.execute(paramObj);
+		}
+	}
+
+	return {
+		init : function($prdNo, $likeFrom, $prdTypCd){
+			prdNo = $prdNo;
+			likeFrom = $likeFrom;
+			prdTypCd = $prdTypCd;
+
+			$likeAreaWrap = jQuery("div[name=like_"+prdNo+"]");
+			$bindParentObj = $likeAreaWrap.parents("div.product_conts");
+			$zindexParentObj = $likeAreaWrap.parents("div.title_area");
+		}
+		, execute : function(_data){
+			callback(_data);
+		}
+	}
+}();
+
+FooterComm.likePrd.display = function(prdNo, likeFrom, prdTypCd, data){
+	var $likeAreaWrap = jQuery("div[name=like_"+prdNo+"]");
+	var $zindexPhotoParentObj = $likeAreaWrap.parents("div.pub_photo");
+	var $bindParentObj = $likeAreaWrap.parents("div.product_conts");
+	var $zindexParentObj = $likeAreaWrap.parents("div.title_area");
+
+	// 좋아요가 되었습니다 레이어 컨트롤
+	var likeCompleteLayerCtrl = function(){
+		if($zindexParentObj.size() > 0){
+			$likeAreaWrap.parents('li').bind({
+				mouseleave : function(){
+					jQuery("p", $likeAreaWrap).hide();
+				}
+			});
+
+			$likeAreaWrap.bind({
+				mouseenter : function(){
+					$zindexPhotoParentObj.css("z-index", 100);
+					jQuery("p", $likeAreaWrap).show();
+				},
+				mouseleave : function(){
+					jQuery("p", $likeAreaWrap).hide();
+					$zindexPhotoParentObj.css("z-index", 2);
+				}
+			});
+		}else{
+			$zindexParentObj.css("z-index", 199);
+			$bindParentObj.bind({
+				mouseleave : function(){
+					jQuery("p", $likeAreaWrap).hide();
+					$zindexParentObj.css("z-index", 2);
+				}
+			});
+
+			$likeAreaWrap.bind({
+				mouseenter : function(){
+					$zindexPhotoParentObj.css("z-index", 100);
+					jQuery("p", $likeAreaWrap).show();
+					$zindexParentObj.css("z-index", 199);
+				},
+				mouseleave : function(){
+					jQuery("p", $likeAreaWrap).hide();
+					$zindexParentObj.css("z-index", 2);
+					$zindexPhotoParentObj.css("z-index", 2);
+				}
+
+			});
+		}
+
+		$zindexPhotoParentObj.css("z-index", 100);
+		jQuery("p", $likeAreaWrap).show();
+		jQuery("a", $likeAreaWrap).bind({
+			click : function(e){
+				e.preventDefault();
+				if(likeFrom == "IFRAME"){
+					parent.document.location.href= _GNB_CONTEXT_PATH_ + "/interest/AuthInterestProductAction.tmall?method=getAllInterestProductInfo";
+				}else{
+					document.location.href= _GNB_CONTEXT_PATH_ + "/interest/AuthInterestProductAction.tmall?method=getAllInterestProductInfo";
+				}
+			}
+		});
+	};
+
+	//소호전시구좌
+	if(likeFrom == "SOHODISP"){
+		jQuery("#shpLikeCnt"  + prdNo).text(" "+decimalFmt(data.likeCnt));
+		var shpLikeView = jQuery("#shpLikeView" + prdNo);
+		if(shpLikeView != undefined && shpLikeView != null){
+			if(shpLikeView.css("display") == "none"){
+				shpLikeView.css("display", "");
+			}
+		}
+
+		window.open(_ACTION_CONTEXT_URL_ + "/commons/LikeAction.tmall?method=getShpPrdLikePopupSoho", "", "width=350, height=220");
+	}else{
+		//var likeInfoHtml = "<span class=\"likethis_txt\">좋아요</span>" + data.likeCntString;
+		var likeInfoHtml = "<span class=\"likethis_txt\">좋아요</span>" + data.likeCntString;
+		if(data.likeCnt > 9999){
+			likeInfoHtml += "<span class=\"num_plus\">+</span>";
+		}
+		jQuery("button", $likeAreaWrap).html(likeInfoHtml);
+
+		if(likeFrom == "SOHOLIST"){
+			//소호 리스트형 리스팅
+			if(data.likeCnt > 999){
+				$likeAreaWrap.parent("div").addClass("likethis_plus");
+			}
+		}
+
+
+		//쇼킹딜 리스팅
+		if(likeFrom == "DEAL"){
+			$likeAreaWrap.attr("class","like_this checked").parent("div").attr("class","like_info");
+			$bindParentObj = $likeAreaWrap.parents("li[name=dealPrdLiWrap]");
+			$zindexParentObj = $bindParentObj;
+		}
+
+		likeCompleteLayerCtrl();
+	}
+}
+
+
+FooterComm.fnSrchPrdLikeDelete = function(prdNoList){
+	var callback = function(data){
+		if(data.resultCd == "success"){
+			alert("해당 찜한 상품을 삭제하였습니다.");
+		}else if(data.resultCd == "failure"){
+			alert("일시적인 오류가 발생했습니다. 다시 시도해 주십시요.");
+		}
+	};
+
+	if(!funcCheckIsLogin()){
+		openLogin(5, "afterLikeSrchLogin");
+		return;
+	}else{
+		var delPrdNoList = prdNoList.replace(/,/g, encodeURIComponent("#@#"));
+		var url = _ACTION_CONTEXT_URL_ + "/commons/LikeAjaxAction.tmall?method=deleteLikeProductList&data=" + delPrdNoList + "&callBack=?";
+		jQuery.getJSON(url, callback);
+	}
+}
+
+
+
+/**
+*  Base64 encode / decode
+*  http://www.webtoolkit.info/
+**/
+FooterComm.Base64 = {_keyStr:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",encode:function(b){var a="",d,c,f,g,h,e,k=0;for(b=this._utf8_encode(b);k<b.length;)d=b.charCodeAt(k++),c=b.charCodeAt(k++),f=b.charCodeAt(k++),g=d>>2,d=(d&3)<<4|c>>4,h=(c&15)<<2|f>>6,e=f&63,isNaN(c)?h=e=64:isNaN(f)&&(e=64),a=a+this._keyStr.charAt(g)+this._keyStr.charAt(d)+this._keyStr.charAt(h)+this._keyStr.charAt(e);return a},decode:function(b){var a="",d,c,f,g,h,e=0;for(b=b.replace(/[^A-Za-z0-9\+\/\=]/g,"");e<
+b.length;)d=this._keyStr.indexOf(b.charAt(e++)),c=this._keyStr.indexOf(b.charAt(e++)),g=this._keyStr.indexOf(b.charAt(e++)),h=this._keyStr.indexOf(b.charAt(e++)),d=d<<2|c>>4,c=(c&15)<<4|g>>2,f=(g&3)<<6|h,a+=String.fromCharCode(d),64!=g&&(a+=String.fromCharCode(c)),64!=h&&(a+=String.fromCharCode(f));return a=this._utf8_decode(a)},_utf8_encode:function(b){b=b.replace(/\r\n/g,"\n");for(var a="",d=0;d<b.length;d++){var c=b.charCodeAt(d);128>c?a+=String.fromCharCode(c):(127<c&&2048>c?a+=String.fromCharCode(c>>
+6|192):(a+=String.fromCharCode(c>>12|224),a+=String.fromCharCode(c>>6&63|128)),a+=String.fromCharCode(c&63|128))}return a},_utf8_decode:function(b){for(var a="",d=0,c=c1=c2=0;d<b.length;)c=b.charCodeAt(d),128>c?(a+=String.fromCharCode(c),d++):191<c&&224>c?(c2=b.charCodeAt(d+1),a+=String.fromCharCode((c&31)<<6|c2&63),d+=2):(c2=b.charCodeAt(d+1),c3=b.charCodeAt(d+2),a+=String.fromCharCode((c&15)<<12|(c2&63)<<6|c3&63),d+=3);return a},URLEncode:function(b){return escape(this._utf8_encode(b))},URLDecode:function(b){return this._utf8_decode(unescape(b))}};
+
+
+// 상품의 장바구니 제한여부 체크
+function fnPrdBsktExYn(prdNo){}
+
+FooterComm.installDirectVisit = function(){
+	try{
+		clickStat('install');
+		alert('바로가기 파일을 설치하시면\n\n바탕화면 바로가기 및 브라우저의 즐겨찾기 추가가 완료 됩니다.');
+		window.location.href = 'https://www.11st.co.kr/ocx/11stShortCut.exe';
+	} catch(e){
+		alert("확인 버튼을 누르면 바로가기 ON상태로 변경됩니다.");
+		top.location.href = 'https://www.11st.co.kr/connect/Gateway.tmall?method=Xsite&tid=1000013091';
+	}
+}
+
+
+FooterComm.fnSrchBrandLike = function(brandCd, likeFrom){
+	if(brandCd == ''){
+		return;
+	}
+
+	if(!funcCheckIsLogin()){
+		openLogin(5, "afterLikeSrchLogin"); //확인
+		return;
+	}else{
+		FooterComm.likeBrand.callback.init(brandCd, likeFrom);
+
+		jQuery.ajax({
+	        url : _GNB_CONTEXT_PATH_ + '/commons/LikeAjaxAction.tmall?method=addLikeBrand&likeBrandCd=' + brandCd + '&callBack=FooterComm.likeBrand.callback.execute'
+			, dataType: 'jsonp'
+			, scriptCharset: 'utf-8'
+	    });
+		//jQuery.getJSON(url, callback);
+	}
+}
+
+
+FooterComm.likeBrand = {};
+FooterComm.likeBrand.callback = function(){
+	var brandCd;
+	var likeFrom = '';
+
+	var $likeAreaWrap;
+	var $bindParentObj;
+	var $zindexParentObj;
+
+	var callback = function(data){
+		if(data.resultCd == "success"){
+			$likeAreaWrap.addClass("checked");
+			success(data);
+		}else if(data.resultCd == "failure"){
+			alert("일시적인 오류가 발생했습니다. 다시 시도해 주십시요.");
+		}else if(data.resultCd == "already"){
+			$likeAreaWrap.addClass("checked");
+			alert("이미 좋아요 한 브랜드입니다.");
+
+			var likeInfoHtml = "<span class=\"likethis_txt\">좋아요</span>" + data.likeCntString;
+			if(data.likeCnt > 9999){
+				likeInfoHtml += "<span class=\"num_plus\">+</span>";
+			}
+			jQuery("button", $likeAreaWrap).html(likeInfoHtml);
+
+		}else if(data.resultCd == "login"){
+			openLogin(5, "afterLikeSrchLogin");
+			return;
+		}else if(data.resultCd == "isEmailAuth"){
+			alert("죄송합니다. 이메일 인증회원은 국문사이트 브랜드의 좋아요♥가 불가합니다.\n영문 사이트 혹은 로그아웃 후 비회원 구매하기를 통해 주문해 주시기 바랍니다.");
+		}else if(data.resultCd == "isMinor"){
+			var conUrl = _GNB_CONTEXT_PATH_ + "/jsp/common/checkAdultContents.jsp?referer=" + document.domain;
+			window.open(conUrl, "PreView", "width=800, height=320, scrollbars=no, status=no");
+		}
+	};
+
+	var success = function(data){
+		// view 컨트롤
+		FooterComm.likeBrand.display(brandCd, likeFrom, data);
+	};
+
+	return {
+		init : function($brandCd, $likeFrom){
+			brandCd = $brandCd;
+			likeFrom = $likeFrom;
+
+			$likeAreaWrap = jQuery("div[name=like_"+brandCd+"]");
+			$bindParentObj = $likeAreaWrap.parents("div.product_conts");
+			$zindexParentObj = $likeAreaWrap.parents("div.title_area");
+		}
+		, execute : function(_data){
+			callback(_data);
+		}
+	}
+}();
+
+FooterComm.likeBrand.display = function(brandCd, likeFrom, data){
+	var $likeAreaWrap = jQuery("div[name=like_"+brandCd+"]");
+	var $bindParentObj = $likeAreaWrap.parents("div.product_conts");
+	var $zindexParentObj = $likeAreaWrap.parents("div.title_area");
+
+	// 좋아요가 되었습니다 레이어 컨트롤
+	var likeCompleteLayerCtrl = function(){
+		if($zindexParentObj.size() > 0){
+			$likeAreaWrap.parents('li').bind({
+				mouseleave : function(){
+					jQuery("p", $likeAreaWrap).hide();
+				}
+			});
+
+			$likeAreaWrap.bind({
+				mouseenter : function(){
+					jQuery("p", $likeAreaWrap).show();
+				},
+				mouseleave : function(){
+					jQuery("p", $likeAreaWrap).hide();
+				}
+			});
+		}else{
+			$zindexParentObj.css("z-index", 199);
+			$bindParentObj.bind({
+				mouseleave : function(){
+					jQuery("p", $likeAreaWrap).hide();
+					$zindexParentObj.css("z-index", 2);
+				}
+			});
+
+			$likeAreaWrap.bind({
+				mouseenter : function(){
+					jQuery("p", $likeAreaWrap).show();
+					$zindexParentObj.css("z-index", 199);
+				},
+				mouseleave : function(){
+					jQuery("p", $likeAreaWrap).hide();
+					$zindexParentObj.css("z-index", 2);
+				}
+
+			});
+		}
+
+		jQuery("p", $likeAreaWrap).show();
+		jQuery("a", $likeAreaWrap).bind({
+			click : function(e){
+				e.preventDefault();
+				if(likeFrom == "IFRAME"){
+					parent.document.location.href= _GNB_CONTEXT_PATH_ + "/interestBrand/AuthInterestBrandAction.tmall?method=getAllInterestBrandInfo";
+				}else{
+					document.location.href= _GNB_CONTEXT_PATH_ + "/interestBrand/AuthInterestBrandAction.tmall?method=getAllInterestBrandInfo";
+				}
+			}
+		});
+	};
+
+
+	//var likeInfoHtml = "<span class=\"likethis_txt\">좋아요</span>" + data.likeCntString;
+	var likeInfoHtml = "<span class=\"likethis_txt\">좋아요</span>" + data.likeCntString;
+	if(data.likeCnt > 9999){
+		likeInfoHtml += "<span class=\"num_plus\">+</span>";
+	}
+	jQuery("button", $likeAreaWrap).html(likeInfoHtml);
+
+	likeCompleteLayerCtrl();
+}
+
+
+
+// 특정 카드 제휴사를 통해 페이지 접근시 내맘대로 할인 중복혜택 제외 안내 팝업 노출
+function benefitCardLayer(){
+	var isExceptXsite = false;
+	try{ 
+		var xSite = TMCookieUtil.getCookie("XSITE");
+		
+		if(_EXCEPT_XSITE_LIST_.indexOf("|" + xSite + "|") >= 0){ // 제외 제휴사
+			isExceptXsite = true;
+		}
+	}catch(e){}
+	
+	if(isExceptXsite == true){
+		// 현재 URL 주소 
+		var thisPathName = window.location.pathname;
+		var thisSearch = window.location.search;
+		if(thisSearch != ''){
+			thisSearch = thisSearch.split('&')[0];
+		}
+		thisPathName = thisPathName + thisSearch;
+		
+		// 레이어팝업 노출할 URL 경로
+		var mainPath = '/browsing/Main.tmall?method=showMain';									//메인URL1
+		var mainOldPath = '/browsing/Main.tmall?method=showMainOld';							//메인URL2
+		var mainGenPath = '/html/main.html';													//메인젠URL
+		var mallPlanDetailPath ='/browsing/MallPlanDetail.tmall?method=getMallPlanDetail';		//기획전상세
+		
+		if(thisPathName.indexOf(mainPath) > -1 || 
+				thisPathName.indexOf(mainOldPath) > -1 || 
+				thisPathName.indexOf(mainGenPath) > -1 ||
+				thisPathName.indexOf(mallPlanDetailPath) > -1){
+			
+			var layerPopTitle = "내맘대로 할인 중복혜택 제외 안내";
+			var layerPopExcept = "내맘대로 할인/T멤버쉽/마일리지";
+			if(xSite == "1000436475"){
+				layerPopTitle = "카드할인 및 기타 11번가 중복혜택 제외 안내";
+				layerPopExcept = "카드 추가할인/T멤버쉽/마일리지";
+			}
+							
+			var layerPopStr = '<div class="dayclose_popwrap">'
+					+ '		<div class="daypop">'
+					+ '			<div class="daypop_cnt" id="capop_cont">'
+					+ '				<h4><div class="title">' + layerPopTitle + '</div></h4>'
+					+ '				<div class="cont">'
+					+ '					<div class="my_benefit">'
+					+ '						<strong>카드사 제휴쇼핑몰을 통해 유입시,<br>11번가에서 제공하는 일부 혜택은 적용되지 않습니다.</strong>'
+					+ '						<span>카드사 포인트 적립 또는 청구할인 혜택은 정상 적용됩니다.</span>'
+					+ '						<em>적용불가 혜택 : ' + layerPopExcept + '<br>카드사 : 신한/롯데/국민/현대/삼성/하나(구 하나SK)/씨티</em>'
+					+ '					</div>'
+					+ '				</div>'
+					+ '				<div class="close_wrap">'
+					+ '					<label for="tClose"><input type="checkbox" id="tClose">오늘 다시 열지 않기</label>'
+					+ '					<button type="button" onclick="layerTodayClose();">닫기</button>'
+					+ '				</div>'
+					+ '			</div>'
+					+ '		</div>'
+					+ '	</div>';
+		
+			if(thisPathName.indexOf(mainPath) > -1 || 
+					thisPathName.indexOf(mainOldPath) > -1 || 
+					thisPathName.indexOf(mainGenPath) > -1 ||
+					thisPathName.indexOf(mallPlanDetailPath) > -1){
+				jQuery('#layBodyWrap').prepend(layerPopStr);
+			}else{
+				jQuery('#layBody').prepend(layerPopStr);
+			}
+				
+		}
+	}
+}
+
+
+// 레이어 닫기버튼
+function layerTodayClose(){
+	var tClose = document.getElementById('tClose');
+	if(tClose.checked==true){
+		TMCookieUtil.add(1,'INFO_LAYERPOP_CONTROLL_KEY', 'Y');
+	}
+	jQuery('#capop_cont').hide();
+}
+
+
+//카드사 제휴 할인 제외 안내 팝업
+try {
+	jQuery(document).ready(function(){
+		if(!TMCookieUtil.isExist(1, 'INFO_LAYERPOP_CONTROLL_KEY')){
+			benefitCardLayer();
+		}
+	});
+}catch(e){}
+
+function catchAnchorGAToEvent(){}
+function catchAnchorGA(){}
+
+function priceHtml (prdData){
+	var prdHtml = '';
+	if(prdData.SEL_STAT_CD != undefined && prdData.UNIT_TEXT != undefined){
+		if(prdData.SEL_STAT_CD == '103'){
+			prdHtml = '<strong>' + prdData.PRC1 + '</strong>' + prdData.UNIT_TEXT;
+		}else if(prdData.SEL_STAT_CD == '104'){
+			prdHtml = '<strong>품절</strong>';
+		}else{
+			prdHtml = '<strong>판매중지</strong>';
+		}
+	}else{
+		prdHtml = '<strong>' + prdData.PRC1 + '</strong>원' + (prdData.OPT_YN == 'Y'? '~' : '');
+	}
+
+	return prdHtml;
+}
+
+var footerPopup = "";
+var divAccount = document.getElementById("layAccount");
+
+function getXTCookie(name){
+	var cookies = document.cookie.split("; ");
+    for (var i=0; i < cookies.length; i++){
+        var cPos = cookies[i].indexOf("=");
+        var cName = cookies[i].substring(0, cPos);
+        if(cName == name){
+            return unescape(cookies[i].substring(cPos + 1));
+        }
+    }
+    return "";
+}
+
+try  {
+	var t_prd_list = "";
+	var t_cells = document.getElementsByTagName("a");
+	var prdNoReg = new RegExp("prdNo=[0-9]*","g");
+	var t_prePrdNo = ""
+	for (var i = 0; i < t_cells.length; i++){
+		var t_link = t_cells[i].getAttribute("href");
+		if(t_link == null) continue;
+		var t_prdNos = t_link.match(prdNoReg);
+		var t_prdNo = ""
+		if(t_prdNos != null && t_prdNos.length > 0){
+			if(t_link.indexOf("SellerProductDetail.tmall") > 0 && t_prdNos[0].length > 6){
+				t_prdNo = t_prdNos[0].substring(6);
+				if(t_prePrdNo != t_prdNo){
+					t_prd_list = t_prd_list + t_prdNo +"^";
+					t_prePrdNo = t_prdNo;
+				}
+			}
+		}
+	}
+} catch (t_ex){}
+
+jQuery(document).ready(
+	function(){
+		try {
+			var isCheck = TMCookieUtil.isExist(0, 'scrnChk');
+      var cookiePerInfoRelocateVal = TMCookieUtil.getSubCookie(2, 'PCPER_CHK_YN').toUpperCase();
+
+			if(!isCheck){
+				var	i =	new	Image();
+				var protocol = window.location.protocol;
+				var width = window.screen.width;
+				var height = window.screen.height;
+				i.src =	protocol + '//www.11st.co.kr/st/screen.st?resolution=' + width + 'x' + height + '&isMobile=n';
+				TMCookieUtil.add(0, 'scrnChk', 'Y');
+			}
+
+			// 시스템 팝업 노출코드를 현 코드로 옮겼다.
+		} catch (ex){}
+	}
+); 
+
+/* inc_footer_data_static.js */
+
+var FooterData = {};
+/* header 선언부 */
+
+if(typeof(isToastBnnr) == "undefined") var isToastBnnr = false;
+if(typeof(isPopUnder) == "undefined") var isPopUnder = false;
+if(typeof(_browser) == "undefined") var _browser = "";
+if(typeof(isIE) == "undefined") var isIE = false;
+if(typeof(isIE6) == "undefined") var isIE6 = false;
+if(typeof(isIE7) == "undefined") var isIE7 = false;
+if(typeof(isIE8) == "undefined") var isIE8 = false;
+if(typeof(isIE9) == "undefined") var isIE9 = false;
+if(typeof(isIE10) == "undefined") var isIE10 = false;
+if(typeof(isFireFox) == "undefined") var isFireFox = false;
+if(typeof(isOpera) == "undefined")	var isOpera = false;
+if(typeof(isChrome) == "undefined") var isChrome = 0;
+if(typeof(isSafari) == "undefined") var isSafari = false;
+
+/* header 선언부 */
+/* common var */
+var _currUrl 	= window.document.location.pathname;
+var _protocol	= window.document.location.protocol;
+var ajaxDomainURL = "https://www.11st.co.kr";
+var blankHTML = "";
+if(_protocol == 'https:') blankHTML = "https://www.11st.co.kr/html/blank.html";
+else blankHTML = "https://www.11st.co.kr/html/blank.html";
+
+var WWW_URL = '';
+var is_chkmain;
+var is_prodDetail = false;
+
+if(_protocol == 'https:'){
+	WWW_URL = _protocol + '//www.11st.co.kr'
+}else{
+	try	{
+		WWW_URL = _IMG_URL_;
+	} catch(e)	{
+		WWW_URL = _protocol + '//s.011st.com'
+	}
+}
+
+if(partnerHeaderHeight == undefined)
+	var partnerHeaderHeight = 0;
+
+if(_currUrl.toLowerCase().indexOf('/product/sellerproductdetail.tmall') >= 0)
+	is_prodDetail = true;
+
+
+var leftPollBnnrCurWeight = 10;
+/* [Left Bnnr APP END] */
+// HeaderComm.setDirectVisitCookie({XSITE : [],PARTNER_CD : ['1204', '1356', '1410', '1229', '1230', '1259', '1260', '1359', '1379', '1436', '1282', '1409', '1458', '1206', '1288', '1306', '1358', '1376', '1079', '1412', '1464', '1046', '1296', '1383', '1384', '1497', '1527', '1200', '1201', '1361', '1371', '1203', '1471', '1349', '1404', '1522', '1528', '1530', '1208', '1256', '1345', '1369', '1276', '1286', '1287', '1424', '1450', '1473', '1573', '1588', '1561', '1599', '1569', '1570', '1616', '1657', '1545', '1557', '1594', '1615', '1655', '1969', '2051', '2074', '1968', '2123', '2410', '2408', '2266', '2407', '2608', '2609']});
+
+(function(){
+	try {
+		if(HeaderComm.isDirectVisit()){
+			jQuery('#DIRECT_ONOFF').html('<a class="marL7 marT1"><img src="'+WWW_URL+'/img/common/Gnb_11up/direct_on_v3.gif" alt=""></a>');
+		}else{
+			jQuery('#DIRECT_ONOFF').html('<a class="TaB_TooL_v5"><span>11번가바로가기</span></a>');
+			jQuery('span.mcardsale').hide();
+		}
+	} catch(e){}
+}());
+
+var popUnderHtml = '';
+var isNoneTBposition4IE6 = false;
+
+function ShortcutGnb(code){
+	FooterComm.installDirectVisit(code);
+}
+
+function removeCookie(name,domain,path){
+	var expireDate = new Date();
+	expireDate.setDate(expireDate.getDate()-1);
+	document.cookie = name + "= " + "; path="+path+"; domain="+domain+";  expires=" + expireDate.toGMTString() + ";";
+}
+
+
+function removeCookieWB(){
+	name = "WB_DEFAULT";
+	var str = getCookie(name);
+	if(str){
+		str = str.substr(str.length-1,1);
+		removeCookie(name,".11st.co.kr","/");
+		setCookieWB(name, str);
+	}
+}
+
+function getCookie(name){
+	var search = name + "=";
+	if(document.cookie.length > 0){
+		offset = document.cookie.indexOf(search);
+		if(offset != -1){
+				offset += search.length;
+				end = document.cookie.indexOf(";",offset);
+				if(end == -1) end = document.cookie.length;
+				return unescape(document.cookie.substring(offset,end));
+		}
+		else return false;
+	}
+	else return false;
+}
+
+function setCookieWB (name, value, expires){
+  if(expires != null)
+  	document.cookie = name + "=" + escape (value) + "; path=/;domain=.11st.co.kr; expires=" + expires.toGMTString();
+  else
+  	document.cookie = name + "=" + escape (value) + "; path=/;domain=.11st.co.kr;";
+}
+
+function getXMLHttpRequest(){
+	if(window.ActiveXObject){
+		try{
+			return new ActiveXObject("Msxml2.XMLHTTP");
+		}catch(e){
+			try{
+				return new ActiveXObject("Microsoft.XMLHTTP");
+			}catch(e1){
+				return null;
+			}
+		}
+	}else if(window.XMLHttpRequest){
+		return new XMLHttpRequest();
+	}else{
+		return null;
+	}
+}
+
+function clickStat(clickId)	{
+	var	i =	new	Image();
+	var _protocol = window.document.location.protocol;
+	if(_protocol == 'https:')
+		i.src = "https://www.11st.co.kr/banner.html?url=" + clickId;
+	else
+		i.src =	"https://www.11st.co.kr/banner.html?url=" + clickId;
+}
+
+function replaceAll(str, oldStr, newStr){
+	return str.replace(new RegExp(oldStr, "gi"), newStr);
+}
+
+function resetWB(){}
+
+var _arrPopUnderMaxCnt = 1;var _arrPopUnderIndex = 0;var _arrPopUnderImg = new Array();var _arrPopUnderLnk = new Array();var _arrPopUnderTrc = new Array();var _popunder_wdith = 320;var _popunder_height = 348;_arrPopUnderListCnt = 1;
+
+if(isPopUnder){	
+	_arrPopUnderImg.push("https://i.011st.com/browsing/banner/2010/06/30/2828/2010063018313032915_5914025_1.jpg");
+	_arrPopUnderLnk.push("https://www.11st.co.kr/browsing/MallPlanDetail.tmall?method=getMallPlanDetail&planDisplayNumber=38346");
+	_arrPopUnderTrc.push("120100630384988540");
+}	
+FooterData.firstMktArr=[];
+FooterData.memberMktArr=[];
+FooterData.globalFirstMktArr=[];
+FooterData.globalMemberMktArr=[];
+var wingRBnnrRecomm ={}
+FooterData.directLayerBenefit = '<dl><dt>바로가기 접속 고객님의 특별한 혜택</dt><dd><ol><li>1. 쿠폰존 사용 혜택</li><li>2. 멤버십 등급별 제공되는 쿠폰 사용</li></ol><p class=m_benefit><span class=ico></span>모바일 App 접속시 특별한 혜택 적용</p></dd></dl>';
+FooterData.metaCtgrGrp1 = [];
+FooterData.metaCtgrGrp2 = [];
+FooterData.metaCtgrGrp3 = [];
+FooterData.metaCtgrGrp4 = [];
+FooterData.metaCtgrGrp5 = [];
+FooterData.metaCtgrGrp6 = [];
+FooterData.metaCtgrGrp7 = [];
+FooterData.metaCtgrGrp8 = [];
+FooterData.metaCtgrGrp9 = [];
+FooterData.metaCtgrGrp10 = [];
+FooterData.totalLayer=[];
+FooterData.popularCornerList = [];
+FooterData.popularMallListCtgr1 = [];
+FooterData.popularMallListCtgr2 = [];
+FooterData.popularMallListCtgr3 = [];
+FooterData.popularMallListCtgr4 = [];
+FooterData.popularMallListCtgr5 = [];
+FooterData.popularMallListCtgr6 = [];
+FooterData.popularMallListCtgr7 = [];
+FooterData.popularMallListCtgr8 = [];
+FooterData.popularMallListCtgr9 = [];
+FooterData.popularMallListCtgr10 = [];
+FooterData.businessBannerList9 = [];
+FooterData.metaCtgrGrp2016_1 = [];
+FooterData.metaCtgrGrp2016_2 = [];
+FooterData.metaCtgrGrp2016_3 = [];
+FooterData.metaCtgrGrp2016_4 = [];
+FooterData.metaCtgrGrp2016_5 = [];
+FooterData.metaCtgrGrp2016_6 = [];
+FooterData.metaCtgrGrp2016_7 = [];
+FooterData.metaCtgrGrp2016_8 = [];
+FooterData.metaCtgrGrp2016_9 = [];
+FooterData.metaCtgrGrp2016_10 = [];
+FooterData.metaCtgrGrp2016_11 = [];
+FooterData.recommendCtgrGrp2016_1 = [];
+FooterData.recommendCtgrGrp2016_2 = [];
+FooterData.recommendCtgrGrp2016_3 = []
+FooterData.recommendCtgrGrp2016_4 = [];
+FooterData.recommendCtgrGrp2016_5 = []
+FooterData.recommendCtgrGrp2016_6 = [];
+FooterData.recommendCtgrGrp2016_7 = []
+FooterData.recommendCtgrGrp2016_8 = [];
+FooterData.recommendCtgrGrp2016_9 = [];
+FooterData.recommendCtgrGrp2016_10 = [];
+FooterData.recommendCtgrGrp2016_11 = [];
+FooterData.recommendCtgrGrp2016_12 = [];
+FooterData.recommendCtgrGrp2016_13 = [];
+FooterData.totalLayer2016=[];
+FooterData.metaCategory2016=[];
+FooterData.lCtgrGrp2016_1 = [];
+FooterData.lCtgrGrp2016_2 = [];
+FooterData.lCtgrGrp2016_3 = [];
+FooterData.lCtgrGrp2016_4 = [];
+FooterData.lCtgrGrp2016_5 = [];
+FooterData.lCtgrGrp2016_6 = [];
+FooterData.lCtgrGrp2016_7 = [];
+FooterData.lCtgrGrp2016_8 = [];
+FooterData.lCtgrGrp2016_9 = [];
+FooterData.lCtgrGrp2016_10 = [];
+FooterData.lCtgrGrp2016_11 = [];
+FooterData.lCtgrGrp2016_12 = [];
+FooterData.globalLCtgrList2016 = [];
+FooterData.themeEditShopList = [];
+FooterData.gnbCtgrMallList1 = [];
+FooterData.gnbCtgrMallList2 = [];
+FooterData.gnbCtgrMallList3 = [];
+FooterData.gnbCtgrMallList4 = [];
+FooterData.gnbCtgrMallList5 = [];
+FooterData.gnbCtgrMallList6 = [];
+FooterData.gnbCtgrMallList7 = [];
+FooterData.gnbCtgrMallList8 = [];
+FooterData.gnbCtgrMallList9 = [];
+FooterData.gnbCtgrMallList10 = [];
+FooterData.gnbCtgrMallList11 = [];
+FooterData.gnbCtgrMallList12 = [];
+FooterData.mainLnbBanner8 = [];
+FooterData.mainLnbBanner9 = [];
+FooterData.mainLnbBanner10 = [];
+FooterData.gnbMetaCtgrAdBanner = {"DATA":[{"INDEX":0},{"INDEX":1},{"INDEX":2},{"INDEX":3},{"INDEX":4},{"INDEX":5},{"INDEX":6},{"INDEX":7},{"INDEX":8},{"INDEX":9}]}
+var _arrSearchTextAdTxt = new Array();
+var _arrSearchTextAdLnk = new Array();
+var _arrSearchTextAdTrcNo = new Array();
+var _arrSearchTextAdRank = new Array();
+var _arrSearchTextAdPrdNo = new Array();
+function setGnbKwdAd(){}
+var gnbDealIntroduceBnr ={"count":0,"items":[]};
+var gnbDealEmergencyBnrPrd ={"count":0,"items":[]};
+var gnbNowIntroduceBnr ={"count":0,"items":[]};
+var gnbNowOnSalePrd ={"count":0,"items":[]};
+var gnbNowExhiBnr ={"count":0,"items":[]};
+var gnbNowCtgr ={"count":0,"items":[]};
+var _stckImg2 =[];
+var stck = function(pageId, zoneId, trcNo, redirectNo, redirectUrl, target, option , clickType){
+	if(trcNo != null){
+		if(isValidTrcCode(trcNo)){
+			if(clickType == undefined || clickType == ''){
+				clickType = "C"; // C 인경우는 클릭,I 노출
+			}
+
+			var img = new Image();
+			_stckImg2.push(img);
+			if(document.location.href.indexOf("https") == 0){
+				if(document.location.href.indexOf("login") > 0){
+					img.src = 'https://www.11st.co.kr/login/a.st?a=' + pageId + zoneId + clickType + trcNo + "^" + "&noCache=" + (new Date()).getTime();
+				}else{
+					img.src = 'https://www.11st.co.kr/a.st?a=' + pageId + zoneId + clickType + trcNo + "^" + "&noCache=" + (new Date()).getTime();
+				}
+			}
+			else{
+				img.src = 'https://st.11st.co.kr/a.st?a=' + pageId + zoneId + clickType + trcNo + "^" + "&noCache=" + (new Date()).getTime();
+			}
+
+			try {
+				banner_clickthru (pageId+zoneId, pageId+zoneId+trcNo);
+			} catch (e){}
+		}
+
+		if(redirectUrl != null && redirectUrl != ''){
+			if(target != null && target != ''){
+				if(option != null && option != '') window.open(redirectUrl, target, option);
+				else window.open(redirectUrl, target);
+			}else{
+				location.href = redirectUrl;
+			}
+		}
+	}
+};
+
+var _hdstckImg1=[];
+
+var hdStckSimple = function(trackingInfo){
+	try {
+		var img = new Image();
+		_hdstckImg1.push(img);
+
+		if(document.location.href.indexOf("https") == 0){
+			img.src = "https://www.11st.co.kr/track.st?turl=" + trackingInfo + "^";
+		}else{
+			img.src = "https://st.11st.co.kr/track.st?turl=" + trackingInfo + "^";
+		}
+	} catch(e){}
+};
+
+var _hdstckUrl=[];
+
+var hdStckPushSimple = function(trackingInfo){
+	try {
+		if(trackingInfo != null){
+			_hdstckUrl.push(trackingInfo + "^");
+		}
+	} catch(e){}
+};
+
+var hdStckFlush = function(){
+	try {
+		if(_hdstckUrl != null && _hdstckUrl.length > 0){
+			var baseURL;
+			if(document.location.href.indexOf("https") == 0){
+				baseURL = "https://www.11st.co.kr/track.st?turl=";
+			}else{
+				baseURL = "https://st.11st.co.kr/track.st?turl=";
+			}
+
+			var tempParam = '';
+			for(idx=0; idx < _hdstckUrl.length; idx++){
+				tempParam += _hdstckUrl[idx];
+				if(idx > 0 && idx%9 == 0){
+					var img = new Image();
+					img.src = baseURL + tempParam;
+					tempParam = "";
+				}
+			}
+			if(tempParam != ""){
+				var img = new Image();
+				img.src = baseURL + tempParam;
+			}
+			if(_hdstckUrl != null && _hdstckUrl.length > 0){
+				_hdstckUrl.splice(0, _hdstckUrl.length);
+			}
+		}
+	} catch(e){}
+};
+
+try {
+	var ad_list = new Array();
+	var arrIdx = 0;
+	var t_cells = document.getElementsByTagName("div");
+
+	function ADImpression(){
+		for (var i = 0; i < t_cells.length; i++){
+			var t_link = t_cells[i].getAttribute("title");
+			if(t_link == null) continue;
+			if(isValidTrcStrLength(t_link))
+			{
+				if(isValidTrcStrChar(t_link))
+				{
+					if(isValidTrcStrTrcCode(t_link)){
+						ad_list[arrIdx] = t_link;
+						arrIdx++;
+					}
+				}
+			}
+		}
+		throwImpression();
+	}
+
+	function splitByUnitByteLength(arrList, size, strDelimiter){
+		var byteLength = 0, addLength, lineNo = 0;
+		var rtn = new Array();
+		rtn[lineNo] = "";
+
+		for (var k = 0; k < arrList.length; k++){
+			addLength = arrList[k].length + 1;
+			if(byteLength + addLength > size){
+				rtn[++lineNo] = "";
+				byteLength = 0;
+			}
+			if(trim(arrList[k]).length > 0){
+				rtn[lineNo] += arrList[k] + strDelimiter;
+				byteLength += addLength;
+			}
+		}
+		return rtn;
+	}
+
+	//Remove Duplicated Unit
+	Array.prototype.unique = function(){
+		var a = {};
+		for(var i=0 ; i< this.length ; i++){
+			if(typeof a[this[i]] == "undefined")
+				a[this[i]] = 1;
+		}
+
+		this.length = 0;
+
+		for(var i in a){
+			this[this.length] = i;
+		}
+
+		return this;
+	}
+
+	function throwImpression(){
+		var arr = splitByUnitByteLength(ad_list, 1900, "^");
+
+		//ad. Impression Request
+		for (var j=0; j < arr.length ; j++){
+
+			if(arr[j].length > 1)
+			{
+				var img = new Image();
+				_stckImg2.push(img);
+				// cache 방지를 위해 시간 추가
+				if(document.location.href.indexOf("https") == 0){
+					if(document.location.href.indexOf("login") > 0){
+						img.src = 'https://www.11st.co.kr/login/a.st?a=' +arr[j] + '&noCache='+(new Date()).getTime();;
+					}else{
+						img.src = 'https://www.11st.co.kr/a.st?a=' +arr[j] + '&noCache='+(new Date()).getTime();;
+					}
+				}else{
+					img.src = 'https://st.11st.co.kr/a.st?a='+arr[j] + '&noCache='+(new Date()).getTime();
+				}
+			}
+		}
+	}
+}catch(exp){}
+
+
+//푸터 공통팝업 컨트롤
+
+(function(){	
+	try{
+		if(typeof(removeCookie) === "function"){
+			var GCArr = ["djid", "nssoauthdomain", "ssoprovidertoken", "stdomaincookie", "stdomaintoken", "__utma", "__utmb", "__utmc", "__utmv", "__utmz", "s_lv", "espresso_viewAdvToolbar", "XTLID", "XTVID", "KonanAKC"];
+			for(var idx=0, size=GCArr.length; idx < size; idx++){	
+				removeCookie(GCArr[idx], ".11st.co.kr", "/");
+			}
+		}
+	} catch(e){}
+})(); 

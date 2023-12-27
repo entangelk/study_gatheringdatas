@@ -1,0 +1,133 @@
+@charset "UTF-8";
+/*! Copyright (©) 11ST. All Rights Reserved. */
+* { margin: 0; padding: 0; }
+
+.ifrm_prdc_detail { width: 100%; min-width: 860px; max-width: 900px; text-align: center; margin: 0 auto; font-size: 12px; color: #666; font-family: 'Helvetica Neue','Apple SD Gothic Neo','����',dotum,sans-serif; color: #808080; }
+
+.ifrm_prdc_detail img { max-width: 100%; font-size: 0px; line-height: 0; vertical-align: top; }
+
+.ifrm_prdc_detail table { margin: 0 auto; }
+
+.book_tit1 { display: block; width: 54px; height: 13px; background: url("//c.011st.com/img/product/renew/book_tit.gif") no-repeat left top; overflow: hidden; text-indent: -20000px; }
+
+.book_tit2 { display: block; width: 66px; height: 13px; background: url("//c.011st.com/img/product/renew/book_tit.gif") no-repeat left -14px; overflow: hidden; text-indent: -20000px; }
+
+.book_tit3 { display: block; width: 67px; height: 13px; background: url("//c.011st.com/img/product/renew/book_tit.gif") no-repeat left -28px; overflow: hidden; text-indent: -20000px; }
+
+.book_tit4 { display: block; width: 55px; height: 13px; background: url("//c.011st.com/img/product/renew/book_tit.gif") no-repeat left -42px; overflow: hidden; text-indent: -20000px; }
+
+.book_tit5 { display: block; width: 78px; height: 13px; background: url("//c.011st.com/img/product/renew/book_tit.gif") no-repeat left -56px; overflow: hidden; text-indent: -20000px; }
+
+.book_tit6 { display: block; width: 55px; height: 13px; background: url("//c.011st.com/img/product/renew/book_tit.gif") no-repeat left -70px; overflow: hidden; text-indent: -20000px; }
+
+.book_tit7 { display: block; width: 123px; height: 13px; background: url("//c.011st.com/img/product/renew/book_tit.gif") no-repeat left -154px; overflow: hidden; text-indent: -20000px; }
+
+table { font-size: 12px; color: #666; font-family: 'Helvetica Neue','Apple SD Gothic Neo','����',dotum,sans-serif; color: #808080; }
+
+.dvd_tit1 { display: block; width: 92px; height: 13px; background: url("/img/product/renew/book_tit.gif") no-repeat 0 -84px; overflow: hidden; text-indent: -10000px; }
+
+.dvd_tit2 { display: block; width: 92px; height: 13px; background: url("/img/product/renew/book_tit.gif") no-repeat 0 -98px; overflow: hidden; text-indent: -10000px; }
+
+.dvd_tit3 { display: block; width: 92px; height: 13px; background: url("/img/product/renew/book_tit.gif") no-repeat 0 -112px; overflow: hidden; text-indent: -10000px; }
+
+.dvd_tit4 { display: block; width: 92px; height: 13px; background: url("/img/product/renew/book_tit.gif") no-repeat 0 -126px; overflow: hidden; text-indent: -10000px; }
+
+.dvd_tit5 { display: block; width: 92px; height: 13px; background: url("/img/product/renew/book_tit.gif") no-repeat 0 -140px; overflow: hidden; text-indent: -10000px; }
+
+.bookCnt_Info { clear: both; width: 100%; margin: 10px auto 10px auto; overflow: hidden; zoom: 1; text-align: left; line-height: 160%; }
+
+.bookCnt_Info .book_titW { clear: both; width: 100%; }
+
+.bookCnt_Info .book_titW h3 { vertical-align: middle; margin-bottom: 7px; }
+
+.bookCnt_Info .book_InfoW { clear: both; width: 100%; border: none; padding: 0; margin-bottom: 20px; line-height: 150%; overflow: hidden; zoom: 1; }
+
+.bookCnt_Info .book_InfoW ul { clear: both; zoom: 1; }
+
+.bookCnt_Info .book_InfoW ul li { clear: both; zoom: 1; }
+
+.bookCnt_Info b { color: #e71818; font-weight: normal; }
+
+.bookCnt_Info p { width: 100%; border: none; margin: 0; }
+
+.bookCnt_noti { overflow: hidden; margin-bottom: 15px; padding: 17px; border: 1px solid #f4c4c0; background: #f9f9f9; font-size: 11px; line-height: 18px; }
+
+.bookCnt_noti p { padding-left: 10px; background: url("/img/default/icon/ico_atn.gif") no-repeat 0 4px; font-weight: bold; color: #dd392d; }
+
+.bookCnt_noti ul { list-style: none; color: #4d4d4d; }
+
+ol, li { list-style: none; color: #4d4d4d; }
+
+.bookCnt_noti li { padding-left: 10px; background: url("/img/default/icon/bul_dash4px_4d4d4d.gif") no-repeat 0 5px; }
+
+.marB15 { margin-bottom: 15px; }
+
+.mobile_img { margin: 20px auto; }
+
+.mobile_img img { border: 0; }
+
+.mobile_txt { margin: -3px auto 44px auto; color: #555; font-size: 12px; line-height: 20px; }
+
+.mobile_tmpA { border-top: 1px solid #989898; border-bottom: 1px solid #e5e5e5; background: #fff url("/img/product/mobile_tmp/tmpA.gif") repeat-y; text-align: center; font-weight: bold; color: #010101; font-size: 14px; padding: 32px 20px 30px 20px; margin: 0 auto 80px auto; line-height: 19px; }
+
+.mobile_tmpB { background: #fff url("/img/product/mobile_tmp/tmpB.gif") repeat-y; text-align: center; font-weight: bold; color: #70635b; font-size: 17px; padding: 47px 20px 54px 20px; margin: 0 auto 80px auto; line-height: 24px; }
+
+.mobile_tmpC { background: #fff url("/img/product/mobile_tmp/tmpC.gif") repeat-y; text-align: center; font-weight: bold; color: #6d6a73; font-size: 17px; padding: 57px 20px 50px 20px; margin: 0 auto 80px auto; line-height: 24px; }
+
+.mobile_tmpD { background: #fff url("/img/product/mobile_tmp/tmpD_t.gif") no-repeat 50% 0; margin: 0 auto 80px auto; }
+
+.mobile_tmpD .bg_btm { background: url("/img/product/mobile_tmp/tmpD_b.gif") no-repeat 0 100%; text-align: center; font-weight: bold; color: #eb6144; font-size: 17px; padding: 36px 20px 22px 20px; line-height: 24px; }
+
+.mobile_tmpD .bg_btm .tit { display: block; font-size: 12px; font-weight: bold; text-align: center; margin: 0 0 16px -3px; width: 99px; }
+
+.mobile_tmpE { background: url("/img/product/mobile_tmp/tmpE.jpg") repeat-y; text-align: center; font-weight: bold; color: #32615b; font-size: 17px; padding: 34px 20px 30px 20px; margin: 0 auto 80px auto; line-height: 24px; }
+
+.mobile_tmpF { background: url("/img/product/mobile_tmp/tmpF_m.jpg") repeat-y; margin: 0 auto 80px auto; }
+
+.mobile_tmpF .bg_top { background: url("/img/product/mobile_tmp/tmpF_t.jpg") no-repeat; }
+
+.mobile_tmpF .bg_btm { background: url("/img/product/mobile_tmp/tmpF_b.jpg") no-repeat 0 100%; text-align: center; font-weight: bold; color: #2c2a1e; font-size: 17px; padding: 69px 20px 77px 20px; line-height: 21px; }
+
+.mobile_tmpG { border: 3px solid #a79a94; background: #fbfaf6 url("/img/product/mobile_tmp/tmpG.jpg") no-repeat 50% 100%; text-align: center; font-weight: bold; color: #544736; font-size: 17px; padding: 41px 20px 157px 20px; margin: 0 auto 80px auto; line-height: 21px; }
+
+.btn_top_wrap a { display: block; clear: both; margin: 20px 0 0 30px; }
+
+.prdc_bbs td.qna_expand .answer textarea { width: 600px; }
+
+.bk11st_detail { text-align: left; width: auto; max-width: 100%; font-size: 14px; background: #fff; zoom: 1; }
+
+.bk11st_detail:after { display: block; content: ""; clear: both; }
+
+.bk11st_detail > .bk11st_tit { position: absolute; width: 10px; font-size: 12px; color: transparent; line-height: 40px; white-space: nowrap; }
+
+.bk11st_detail img { width: auto; }
+
+.bk11st_detail .bk11st_box { padding: 24px 0; border-bottom: 1px solid #e5e5e5; zoom: 1; }
+
+.bk11st_detail .bk11st_box:after { display: block; content: ""; clear: both; }
+
+.bk11st_detail .bk11st_box .bk11st_tit { font-size: 17px; letter-spacing: -1px; color: #333; }
+
+.bk11st_detail .bk11st_box .bk11st_cont { margin-top: 24px; line-height: 25px; letter-spacing: -1px; }
+
+.bk11st_detail .bk11st_box .bk11st_list { margin-top: 24px; line-height: 23px; color: #666; font-size: 14px; }
+
+.bk11st_detail .bk11st_box .bk11st_list b { font-size: 15px; color: #333; font-weight: normal; }
+
+.bk11st_detail .bk11st_box .bk11st_list li { margin-top: 16px; font-size: 15px; line-height: 30px; color: #333; }
+
+.bk11st_detail .bk11st_box .bk11st_list li li { padding-left: 10px; margin-top: 8px; font-size: 14px; color: #666; line-height: 23px; }
+
+.bk11st_detail .bk11st_box .bk11st_movie { margin-top: 24px; }
+
+.bk11st_detail .bk11st_box.bk11st_author .bk11st_cont { margin-top: 0px; margin-left: -52px; }
+
+.bk11st_detail .bk11st_box.bk11st_author .bk11st_row { margin-top: 24px; margin-left: 52px; vertical-align: top; zoom: 1; }
+
+.bk11st_detail .bk11st_box.bk11st_author .bk11st_row:after { display: block; content: ""; clear: both; }
+
+.bk11st_detail .bk11st_box.bk11st_author .bk11st_row img { float: left; width: 106px; height: 106px; margin-right: 16px; border: 1px solid #f1f1ef; }
+
+.bk11st_detail .bk11st_box.bk11st_img { padding-bottom: 0; border-bottom: none; }
+
+/*# sourceMappingURL=prdc_detail.css.map */

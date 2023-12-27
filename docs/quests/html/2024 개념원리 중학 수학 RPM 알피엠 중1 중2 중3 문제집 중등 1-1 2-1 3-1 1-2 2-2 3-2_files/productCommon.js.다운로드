@@ -1,0 +1,329 @@
+/**
+ * @method: productCommon
+ * @dependency: requireJS, jQuery
+ */
+(function(root, factory) {
+    'use strict';
+    if (typeof define === 'function' && define.amd) {
+        define([
+            'jquery'
+        ], factory);
+    } else {
+        root.productCommon = factory(
+            root.jQuery
+        );
+    }
+}(window || this, function($) {
+    'use strict';
+
+    var prdVar;
+    if(parent.productPrdInfo == undefined){
+        prdVar = productPrdInfo;
+    }else{
+        prdVar = parent.productPrdInfo;
+    }
+    var prdLogVar;
+    if(parent.productRakeLogInfo == undefined) {
+        prdLogVar 	= {
+            groupProductCategoryNo : '',
+            groupProductNo : '',
+            groupFirstViewPrdNo : ''
+        };
+    } else {
+        prdLogVar	= parent.productRakeLogInfo;
+    }
+
+    var productCommon = {
+
+        init : function(){
+            //리뷰 , QNA Init
+            if(prdVar.prdNo == null || prdVar.prdNo.length == ""){
+                return;
+            }else{
+                $.ajax({
+                    url: '/browsing/MyHistoryAjaxAction.tmall?method=insertProductData&sellerAgencyCode=01&prdNo='
+                        + prdVar.prdNo + "&authTypeCodes=" + prdVar.authTypeCodes
+                });
+                var groupProductCategoryNo = typeof prdLogVar.groupProductCategoryNo === "undefined" ? 0 : prdLogVar.groupProductCategoryNo;
+                var groupProductNo = typeof prdLogVar.groupProductNo === "undefined" ? 0 : prdLogVar.groupProductNo;
+                var groupFirstViewPrdNo = typeof prdLogVar.groupFirstViewPrdNo === "undefined" ? 0 : prdLogVar.groupFirstViewPrdNo;
+                var isPreview = typeof prdVar.isPreview === "undefined" ? false : prdVar.isPreview;
+                $("#ifrmReview").attr(
+                    "src",
+                    "/products/" + prdVar.prdNo + "/review-frame"
+                    + "?page=1&pageTypCd=first&reviewDispYn="
+                    + prdVar.reviewDispYn + "&isPreview="
+                    + isPreview + "&reviewOptDispYn="
+                    + prdVar.reviewOptDispYn
+                    + "&optSearchBtnAndGraphLayer=Y&reviewBottomBtn=Y&openDetailContents=Y&pageSize=10"
+                    + "&isIgnoreAuth=false"
+                    + "&lctgrNo=" + prdVar.ldispCtgrNo
+                    + "&leafCtgrNo=" + groupProductCategoryNo
+                    + "&groupProductNo=" + groupProductNo
+                    + "&groupFirstViewPrdNo=" + groupFirstViewPrdNo
+                    + "&selNo=" + prdVar.selMnbdNo
+                    + "&prdTypCd=" + prdVar.prdTypCd
+                    + "&myProduct=" + prdVar.isMyProduct
+                    + "&kkukNo=" + kkukNo
+                    + "&spn=" + prdVar.spn
+                );
+
+                // review atf event
+                if ($('#review-atf-container').children().find('.item').length > 1) {
+                    $('#review-atf-container').each(function (index, element) {
+                        var $this = $(this);
+                        var swiper = new Swiper($this, {
+                            loop: true,
+                            navigation: {
+                                nextEl: $(this).siblings('.c_product_pagination').find('.navigator .next'),
+                                prevEl: $(this).siblings('.c_product_pagination').find('.navigator .previous'),
+                            },
+                            pagination: {
+                                el: $(this).siblings('.c_product_pagination').find('.page'),
+                                type: 'custom',
+                                renderCustom: function (swiper, current, total) {
+                                    return '<strong aria-label="현재페이지">' + current + '</strong> <span class="skip" aria-label="전체 페이지">' + total + '</span>' + total;
+                                }
+                            }
+                        });
+
+                        swiper.on('slideChange', function() {
+                            $('.swiper-slide-active > a').each(function (v) {
+                                var isImpression = $(this).attr('data-impression');
+                                if (isImpression !== undefined
+                                    && "Y" === isImpression) {
+                                    $(this).attr('data-impression', "N");
+                                    rakeLog.sendRakeLog(this, 'impression');
+                                    $(this).attr('data-impression', "Y");
+                                }
+                            });
+                        });
+                    });
+                }
+
+                var storeNo = "";
+                if(prdVar.isAuth){
+                    storeNo = prdVar.storeNo;
+                }
+
+                $("#ifrmQnA").attr("src",
+                    "/products/" + prdVar.prdNo + "?method=getProductQnAList&brdInfoClfNo="
+                    + prdVar.prdNo + "&curPage=1&isMart="+prdVar.isMart+"&storeNo="
+                    + storeNo + "&martNo=" + prdVar.martNo
+                    + "&pageTypCd=first&sellerNo="
+                    + prdVar.selMnbdNo + "&ldispCtgrNo="
+                    + prdVar.ldispCtgrNo
+                    + "&isSohoPrd="+prdVar.isSohoPrd
+                    + "&isTour="+prdVar.isTour
+                    + "&isRenewYn=Y");
+            }
+
+            // YES24 미리보기
+            $('#yes24PreVw').click(function() {
+                var preVwLinkUrl = $(this).attr("data-val");
+                var pL = parseInt((window.screen.width-1024)/2); 						// 해상도가로
+                var pT = parseInt((window.screen.height-768)/2); 						// 해상도세로
+                var pProp = 'width=1024,height=768,scrollbars=no,resizable=no,left=' + pL + ',top=' + pT + ',directories=no,status=no,menubar=no';
+                var newWin = window.open(preVwLinkUrl, 'YESPREVW', pProp);
+                if (!newWin) {
+                    alert('차단된 팝업창을 허용해 주세요.');
+                } else {
+                    newWin.focus();
+                }
+                return false;
+            });
+
+            //브랜드샵 바로가기
+            $('#brandShop').click(function() {
+                location.href=$(this).attr("brandShoplinkUrl");
+                return false;
+            });
+
+            // 상품리뷰 클릭
+            $('#prdReviewStar, #prdReview').click(function() {
+                $('#tabMenuDetail2').trigger('click');
+                rakeLog.sendRakeLog(this, 'click');
+                return false;
+            });
+
+            //리뷰 검색 엔터키
+            $("#contentsSearch").keydown(function(key) {
+                if (key.keyCode == 13) {
+                    productCommon.fnContentsSearch();
+                }
+            });
+
+            //리뷰검색 클릭
+            $('#contentsSearchBtn').click(function() {
+                productCommon.fnContentsSearch();
+            });
+
+            /****** HOT클릭/카테고리 초이스 Start *******/
+
+            // 기획전 배너
+            $("#btnOpenCMplan").click(function(url) {
+                if (url == "")
+                    return;
+                if (url == undefined)
+                    return;
+
+                var url = prdVar.action_context_url + prdVar.planDisplayUrl;
+                var win = window.open(url, "openCMplan");
+
+                if (win.focus()) {
+                    win.focus();
+                }
+                doCommonStat('PDP0191');
+                return false;
+            });
+
+            //HOT클릭/카테고리초이스 클릭
+            $("input[name=btnRecomm]").click(function() {
+                var prdNo	 = $(this).attr("data-prdNo");
+                var trcNo    = $(this).attr("data-trcNo");
+                var typGubn  = $(this).attr("data-typGubn");
+                var areaGubn = $(this).attr("data-areaGubn");
+                var CPCAd 	 = $(this).attr("data-CPCAd");
+
+                doCommonStat('PDP0303');//영역코드
+
+                if(trcNo > 0) {
+                    // 광고전환통계개선(P1206004)으로 추가 (2013.02.04)
+                    ad_headerCommonJs.util.instance.ConversionCookieQueue.add(trcNo, prdNo, (typGubn + '' + areaGubn));
+                    stck(typGubn, areaGubn, trcNo);
+
+                    // CPC과금
+                    if(CPCAd) {
+                        adSave.ins.clickCPC(typGubn, areaGubn, trcNo);
+                    }
+                }
+                return false;
+            });
+
+            /****** 카테고리 초이스 End *******/
+
+        },
+
+        // 비동기식
+        callAjaxAsynch : function(url, params, callBack) {
+            var pageRequest = false; // ajax object를 위한 변수.
+
+            if (!pageRequest && typeof XMLHttpRequest != 'undefined')
+                pageRequest = new XMLHttpRequest();
+
+            if (pageRequest) {
+                // pageRequest가 true인 경우만.
+                try {
+                    var isAsynch = true;
+                    if (params != '') {
+                        pageRequest.open('POST', url, isAsynch);
+                        pageRequest.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+                        /*pageRequest.setRequestHeader("Content-length", params.length);
+                        pageRequest.setRequestHeader("Connection", "close");*/
+
+                        pageRequest.send(params);
+                    } else {
+                        pageRequest.open('GET', url, isAsynch);
+                        pageRequest.send(null);
+                    }
+
+                    pageRequest.onreadystatechange = function() {
+                        if (pageRequest.readyState == 4) {
+                            var returnVal = 'FAIL';
+                            if (pageRequest.status == 200) {
+                                returnVal = pageRequest.responseText;
+                            }
+
+                            if (typeof (callBack) == "function") {
+                                callBack(returnVal);
+                            } else if (typeof (callBack) == "string") {
+                                if (callBack != '') {
+                                    eval(callBack + "('" + returnVal + "')");
+                                }
+                            }
+                        }
+                    };
+                } catch (e) {
+                    alert(e);
+                    var returnVal = 'FAIL';
+
+                    if (typeof (callBack) == "function") {
+                        callBack(returnVal);
+                    } else if (typeof (callBack) == "string") {
+                        if (callBack != '') {
+                            eval(callBack + "('" + returnVal + "')");
+                        }
+                    }
+                }
+            }
+        },
+
+        //컨텐츠 검색
+        fnContentsSearch : function() {
+            var url = "http://search.11st.co.kr/ContentsSearchAction.tmall?method=getContentsSearch&kwd=";
+            var keyword = document.getElementById("contentsSearch").value;
+
+            if (keyword == "") {
+                alert("검색어를 입력하세요.");
+                document.getElementById("contentsSearch").value = "";
+                document.getElementById("contentsSearch").focus();
+            } else {
+                keyword = keyword.replaceAll("<","&lt").replaceAll(">","&gt");
+                doCommonStat("CRPI001");
+                if (keyword == "상품 리뷰나 추천 상품이 궁금하세요? 여기에서 검색해 보세요. 예)디카 추천") {
+                    window.open("http://search.11st.co.kr/ContentsSearchAction.tmall?method=getContentsSearch&targetTab=CONTENTS&isGnb=Y&prdType=&category=&cmd=&pageSize=30&lCtgrNo=&mCtgrNo=&sCtgrNo=&dCtgrNo=&fromACK=&semanticFromGNB=&gnbTag=CT&schFrom=&tagetTabNm=%C4%C1%C5%D9%C3%F7%B0%CB%BB%F6&kwd=%B5%F0%C4%AB+%C3%DF%C3%B5&adUrl=&adKwdTrcNo=1201210181667423781");
+                } else {
+                    keyword = encodeKwd(trim(keyword));
+                    // FireFox에서 인코딩이 깨져서 수정!
+                    if (navigator.userAgent.indexOf("Firefox") != -1)
+                        keyword = escape(encodeURIComponent(keyword));
+                    window.open(url + keyword);
+                }
+            }
+        },
+
+        //오픈팝업
+        openPopup : function(url, _w, _h) {
+            window.open(url, "_popup", "width=" + _w + ",height=" + _h + ",scrollbars=no,status=no,location=no");
+        },
+
+        launchCenter : function(url, name, width, height, scroll) {
+            if (scroll == undefined)
+                scroll = "no";
+
+            var str = "height=" + height + ",innerHeight=" + height;
+            str += ",width=" + width + ",innerWidth=" + width;
+            str += ",status=no, resizable=no, menubar=no, toolbar=no, location=no, directories=no, scrollbars=" + scroll;
+
+            if (window.screen) {
+                var ah = screen.availHeight - 30;
+                var aw = screen.availWidth - 10;
+
+                var xc = (aw - width) / 2;
+                var yc = (ah - height) / 2;
+
+                str += ",left=" + xc + ",screenX=" + xc;
+                str += ",top=" + yc + ",screenY=" + yc;
+            }
+
+            return window.open(url, name, str);
+        },
+
+        layerPopupCommon : function() {
+            // 스마트옵션 레이어, 그룹상품 레이어
+            var layer_wrap = '.c_product_dialog_wrap2[role=dialog]';
+
+            $(layer_wrap).removeClass('active');
+
+            $('.btn_detail').click(function() {
+                $(layer_wrap).addClass('active').attr('aria-hidden', false);
+            });
+
+            $('.ui_smart_button').click(function() {
+                $(layer_wrap, parent.document).addClass('active').attr('aria-hidden', false);
+            });
+        }
+
+    };
+    return productCommon;
+}));

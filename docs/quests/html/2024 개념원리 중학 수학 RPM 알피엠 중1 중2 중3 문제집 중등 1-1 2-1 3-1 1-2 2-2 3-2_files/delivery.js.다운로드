@@ -1,0 +1,101 @@
+(function(root, factory) {
+    'use strict';
+    if (typeof define === 'function' && define.amd) {
+        define([
+            'jquery',
+            'productCommon'
+        ], factory);
+    } else {
+        root.delivery = factory(
+            root.jQuery,
+            root.productCommon
+        )
+    }
+}(window || this, function($, productCommon) {
+    'use strict';
+    var prdVar = productPrdInfo;
+
+    var delivery = {
+        init : function() {
+            if (prdVar.isMart) {
+                this.setMartProductEventHandler();
+            }
+            this.setDeliveryEventHandler();
+        },
+
+        setMartProductEventHandler: function() {
+            $('#mart-delivery-address').on('click', function() {
+                if (!funcCheckIsLogin()) {
+                    openLogin(1);
+                    return;
+                }
+
+                window.mart.openShippingPopup('pdp');
+            });
+
+            $('#mart-delivery-address-help').on('click', function() {
+                var w = 620;
+                var h = 560;
+                var x = (screen.availWidth - w) / 2;
+                var y = (screen.availHeight - h) / 2;
+                var url = "/vertical/MartAction.tmall?method=goDeliveryInfoSearchPop&strNo="
+                    + prdVar.storeNo + "&martNo=" + prdVar.martNo;
+
+                var dlvTimeWin = window.open(url, "dlvTimePop", "left=" + x + " top=" + y + " width=" + w + " height=" + h + " resizable=yes,scrollbars=no");
+
+                if(dlvTimeWin.focus) {
+                    dlvTimeWin.focus();
+                }
+            });
+
+            $('#mart-alter-product-cart').on('click', function() {
+                var cartUrl = $(this).attr("data-cart");
+                var linkUrl = $(this).attr("data-link");
+                if (linkUrl) {
+                    location.href = linkUrl;
+                    return;
+                }
+
+                if (cartUrl) {
+                    $.ajax({
+                        url : cartUrl,
+                        type : 'get',
+                        datatType : 'json'
+                    }).done(function (data) {
+                        if (data) {
+                            alert(data.status.message);
+                        }
+                    });
+                }
+
+            });
+        },
+
+        setDeliveryEventHandler: function() {
+            // 배송불가지역 검색 레이어 팝업
+            $('a[name=undeliverableLocalPop]').on('click', function () {
+                if (prdVar.isDirectPurchaseType) {
+                    if (!funcCheckIsLogin()) {
+                        openLogin(1);
+                        return false;
+                    }
+                    $('#ar-dialog-delivery-retail[role=dialog]').removeClass('active').addClass('active').attr('aria-hidden', false);
+                } else {
+                    var url = '/product/SellerProductDetail.tmall?method=undeliverableLocalPopUp&width=450&height=290&prdNo=' + prdVar.prdNo;
+                    productCommon.launchCenter(url, "resultView", 450, 290, "auto");
+                }
+                return false;
+            });
+
+            // 도서산간지역 검색
+            $('#islandZipCodeSearch').click(function(e) {
+                var width = 630, height = 460;
+                var sFeatures = "width=" + width + ",height=" + height + ",status=no,help=no,scroll=no";
+                window.open("http://www.11st.co.kr/register/islandZipCodePopup.tmall?method=islandZipCodeSearch","제주도서산간", sFeatures);
+                return false;
+            });
+        }
+    }
+
+    return delivery;
+}));

@@ -1,0 +1,177 @@
+/**
+ * @method: Product Store - store
+ */
+(function(root, factory) {
+    'use strict';
+    if (typeof define === 'function' && define.amd) {
+        define([
+            'jquery'
+        ], factory);
+    } else {
+        root.store = factory(
+            root.jQuery
+        );
+    }
+}(window || this, function($) {
+    'use strict';
+    var prdVar = productPrdInfo;
+
+    var store = {
+        init : function() {
+            var _this = this;
+
+            _this.addLikeEvent();
+            _this.addStoreLikeCoupon();
+        },
+
+        addLikeEvent : function() {
+            $('#like-store').on('click', function() {
+                if (!funcCheckIsLogin()) {
+                    openLogin(5, "afterLikeSrchLogin");
+                    return;
+                }
+
+                var $target = $(this);
+                var deleteLike = $target.hasClass('active');
+                var apiUrl = deleteLike ? '/products/seller/store/delete/like'
+                                     : '/products/seller/store/like';
+                var logBody = {};
+                logBody.current_product_no = prdVar.prdNo;
+                logBody.check_value = deleteLike ? "off" : "on";
+                $target.attr('data-log-actionid-label', 'like_store');
+                $target.attr('data-log-body', JSON.stringify(logBody));
+
+                $.ajax({
+                    url: apiUrl,
+                    type: 'POST',
+                    data: {
+                        'sellerNo' : prdVar.selMnbdNo
+                    }
+                })
+                .success(function (data) {
+                    if(data && data.code === 200) {
+                        if (deleteLike) {
+                            $('#like-count').show();
+                            $target.removeClass('active');
+                            $target.contents()[0].textContent = '스토어 찜';
+                            $target.find('.skip').text("찜하기");
+                            $('#likeIt').val("false")
+                        } else {
+                            $('#like-count').hide();
+                            $target.addClass('active');
+                            $target.contents()[0].textContent = '찜한 스토어';
+                            $target.find('.skip').text("찜취소");
+                            $('#likeIt').val("true")
+                        }
+                        var tooltip = $target.next();
+                        var toolTipPostText = deleteLike ? "해제 되었습니다." : "완료 되었습니다."
+                        tooltip.addClass('active');
+                        tooltip.show();
+                        tooltip.attr('aria-hidden', true);
+                        tooltip.find('.cont').html('<strong>스토어찜</strong>이 ' + toolTipPostText);
+                    } else if (data.status && data.status.message) {
+                        alert(data.status.message);
+                    } else {
+                        alert("잠시 후 시도해 주시기 바랍니다.");
+                    }
+                }.bind(this))
+                    .error(function () {
+                        alert('잠시 후 시도해 주시기 바랍니다.');
+                    }.bind(this));
+            });
+        },
+        addStoreLikeCoupon: function () {
+            $('[aria-controls=ar-dialogCouponStore]').click(function () {
+                if (!funcCheckIsLogin()) {
+                    openLogin(5, "afterLikeSrchLogin");
+                    return;
+                }
+                var likeIt = $('#likeIt').val();
+
+                if ("false" === likeIt) {
+                    $('#' + $(this).attr('aria-controls')).css('display', 'block').attr('aria-hidden', false);
+                } else {
+                    return store.getStoreCoupon()
+                        .then(function () {
+                            alert('발급처리되었습니다');
+                            $('#ar-dialogCouponStore').css('display', 'none').attr('aria-hidden', true);
+                        })
+                        .catch(function (err) {
+                            alert(err);
+                            $('#ar-dialogCouponStore').css('display', 'none').attr('aria-hidden', true);
+                        })
+                }
+            });
+
+            $('#storeCouponPopupClose').click(function () {
+                $('#ar-dialogCouponStore').css('display', 'none').attr('aria-hidden', true);
+            });
+
+            $('#storeCouponDownload').on('click', function (e) {
+                var getStoreCoupon = store.getStoreCoupon;
+                store.doStoreLike()
+                    .then(getStoreCoupon)
+                    .then(function () {
+                        alert('발급처리되었습니다');
+                        $('#ar-dialogCouponStore').css('display', 'none').attr('aria-hidden', true);
+                    })
+                    .catch(function (err) {
+                        alert(err);
+                        $('#ar-dialogCouponStore').css('display', 'none').attr('aria-hidden', true);
+                    })
+            });
+        },
+        doStoreLike: function () {
+            return new Promise(function (resolve, reject) {
+                $.ajax({
+                    url: '/products/seller/store/like',
+                    type: 'POST',
+                    data: {
+                        'sellerNo': prdVar.selMnbdNo
+                    },
+                    success: function (result) {
+                        if (result && result.code === 200) {
+                            $('#likeIt').val("true");
+                            $('#like-store').addClass('active');
+                            resolve(200);
+                        } else if (result.status && result.status.message) {
+                            reject(new Error(result.status.message));
+                        } else {
+                            reject(new Error("잠시 후 시도해 주시기 바랍니다."));
+                        }
+                    },
+                    error: function (xhr, state, except) {
+                        alert('잠시 후 시도해 주시기 바랍니다.');
+                    }
+                })
+            })
+        },
+        getStoreCoupon: function () {
+            return new Promise(function (resolve, reject) {
+                $.ajax({
+                    url: '/products/coupon/seller/store/like',
+                    type: 'POST',
+                    data: {
+                        'sellerNo': prdVar.selMnbdNo,
+                        'encCouponNo': $('#encCouponNo').val()
+                    },
+                    success: function (result) {
+                        if (result &&
+                            result.code === 200 &&
+                            result.status.code === 200 &&
+                            result.status.message.includes('발급처리되었습니다')) {
+                            resolve();
+                        } else {
+                            reject(new Error(result.status.message));
+                        }
+                    },
+                    error: function (xhr, state, except) {
+                        alert('잠시 후 시도해 주시기 바랍니다.');
+                    }
+                })
+            })
+        }
+    };
+
+    return store;
+}));

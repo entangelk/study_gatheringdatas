@@ -1,0 +1,113 @@
+(function(root, factory) {
+    'use strict';
+    if (typeof define === 'function' && define.amd) {
+        define([
+            'jquery'
+        ], factory);
+    } else {
+        root.productCoupon = factory(
+            root.jQuery
+        );
+    }
+}(window || this, function($) {
+    'use strict';
+    var prdVar = productPrdInfo;
+    var couponParam = productCouponDownInfo;
+    var unavailableBrowser = $('html').is('.ie9');
+
+    var productCoupon = {
+
+        init : function() {
+            this.setHandler();
+        },
+
+        setHandler : function() {
+            var _this = this;
+
+            //사업자쿠폰 다운
+            $('#downBizMemCoupon').click(function (e) {
+                var _url		= "/product/SellerProductDetailAjax.tmall?method=downBizMemberCoupon";
+                var bizCupnInfo = $('#downBizMemCoupon').attr('data-val');
+
+                $.ajax({
+                    url : _url ,
+                    type : 'post' ,
+                    data : {
+                        'cupnNoListStr': bizCupnInfo
+                    },
+                    dataType : 'json' ,
+                    error : function(){
+                        alert('서버통신중 에러가 발생되었습니다.');
+                        console.log('서버통신중 에러가 발생되었습니다.');
+                    },
+                    success : function(data){
+                        if(data.resultMsg != undefined  && data.resultMsg != "") {
+                            alert(data.resultMsg);
+                        } else {
+                            alert('쿠폰 발급에 실패하였습니다.');
+                        }
+                    }
+                });
+
+            });
+
+            $('#couponDownButton, #gnbStoreCouponDown, #sellerStoreCouponDown').click(function () {
+                if (unavailableBrowser) {
+                    alert('IE 9 에서는 이용 하실수 없습니다.\n' +
+                        '최신버전으로 Update 후 이용 가능 합니다.');
+                    return;
+                }
+
+                if (!funcCheckIsLogin()) {
+                    if (prdVar.isMart) {
+                        openLogin(1); // 로그인팝업 비회원주문 미노출
+                        return;
+                    }
+
+                    openLogin(5, "afterLikeSrchLogin");
+                    return;
+                }
+
+                couponDownPopup.getDownloadPopupHTMLWrap(
+                    couponParam.prdNo,
+                    couponParam.selPrc,
+                    couponParam.xsiteCode,
+                    couponParam.wireCode,
+                    couponParam.engCpnView,
+                    couponParam.dscCupnIssNo,
+                    couponParam.dscCupnCalcAmt,
+                    couponParam.dupCupnIssNo,
+                    couponParam.dupCupnCalcAmt,
+                    couponParam.channel,
+                    couponParam.soDirectDiscountAmt,
+                    couponParam.moDirectDiscountAmt,
+                    "",
+                    _this.resultDownloadCoupon,
+                    couponParam.sendGiftYn,
+                    couponParam.moDirectDscNo,
+                    couponParam.moDirectDscTypeCode,
+                    couponParam.moDirectDscNameEucKr || "",
+                    couponParam.unipassDscYn
+                );
+            });
+        },
+
+        resultDownloadCoupon : function() {
+            var url = (window.location.href.indexOf('#') > 0) ? window.location.href.substring(0, window.location.href.indexOf('#')) : window.location.href;
+            url = updateQueryStringParameter(url, 'couponPriceYn', 'Y');
+            window.location.href = url;
+        }
+    };
+
+    function updateQueryStringParameter (url, key, value) {
+        var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
+        var separator = url.indexOf('?') !== -1 ? "&" : "?";
+        if (url.match(re)) {
+            return url.replace(re, '$1' + key + "=" + value + '$2');
+        } else {
+            return url + separator + key + "=" + value;
+        }
+    }
+
+    return productCoupon;
+}));

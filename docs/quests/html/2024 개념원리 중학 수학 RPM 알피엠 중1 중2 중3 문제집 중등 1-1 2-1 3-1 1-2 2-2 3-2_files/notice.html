@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<!-- saved from url=(0068)https://www.11st.co.kr/products/3940623089/desc/notice?selStatCd=103 -->
+<html lang="ko"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+    <title>상품공지</title>
+    <link rel="stylesheet" href="./general(1).css" type="text/css">
+    <link rel="stylesheet" href="./prdc_detail.css" type="text/css">
+    <script type="text/javascript" src="./jquery-1.5.min.js.다운로드"></script>
+    <script type="text/javascript">
+        var resizeThread;
+        var i = 0;
+        var ids = ["#detailIfrm", "prdBbsIfrm"];
+
+        function parentFrmResize() {
+            if (!parent) return;
+            if (!parent.document.getElementById(ids[1])) return;
+            if (!document.body) return;
+            try {
+                parent.document.getElementById(ids[1]).height = document.documentElement.scrollHeight;
+            } catch (e) {
+            }
+        }
+
+        resizeThread = setInterval("parentFrmResize()", 100);	//0.1초마다 실행ffff
+
+        function handleError() {
+            return true;
+        }
+
+        
+        window.onload = function () {
+            $(ids[0], parent.document).css("display", "block");
+            if (parent.document.getElementById(ids[1]) == null)
+                return;
+
+            if (!resizeThread && resizeThread != null) clearInterval(resizeThread);
+
+            $("#selRtn", parent.document).css("display", "block");
+        }
+        
+        window.onerror = handleError;
+    </script>
+</head>
+<body>
+<div class="ifrm_prdc_detail" style="text-align:center;">
+<img src="./20230710102635_43104.jpg" alt="이미지를 로딩할 수 없습니다.">
+</div>
+
+</body></html>

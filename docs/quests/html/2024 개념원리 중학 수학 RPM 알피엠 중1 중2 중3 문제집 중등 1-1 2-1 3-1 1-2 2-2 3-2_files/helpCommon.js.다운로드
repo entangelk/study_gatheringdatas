@@ -1,0 +1,60 @@
+/**
+ * @method: helpCommon
+ * @dependency: requireJS, jQuery
+ */
+(function(root, factory) {
+    'use strict';
+    if (typeof define === 'function' && define.amd) {
+        define([
+            'jquery'
+        ], factory);
+    } else {
+        root.helpCommon = factory(
+            root.jQuery
+        );
+    }
+}(window || this, function($) {
+    'use strict';
+
+    var helpCommon = {
+
+        init : function() {
+
+            $('.c_product_tooltip_wrap > .c_product_btn').on('click', function() {
+                var $this = $(this);
+                var $tooltip = $this.siblings('[role=tooltip]');
+
+                if ($tooltip.hasClass('active')) {
+                    $tooltip.removeClass('active');
+                    $this.attr('aria-expanded', false);
+                    return;
+                }
+
+                $('[role=tooltip]').each(function() {
+                    if ($(this).hasClass('active')) {
+                        $(this).removeClass('active');
+                        $(this).prev().attr('aria-expanded', false)
+                    }
+                });
+
+                $tooltip.addClass('active');
+                $this.attr('aria-expanded', true);
+            });
+
+            $('.tooltip .c_product_btn_close').click(function() {
+                $(this).parents('.tooltip').removeClass('active');
+                $(this).parents('.tooltip').siblings('.c_product_btn').attr('aria-expanded', false);
+            });
+
+            $('.tooltip_cont > .cont').scroll(function() {
+                if ($(this).scrollTop() > 0) {
+                    $(this).addClass('scroll');
+                } else {
+                    $(this).removeClass('scroll');
+                }
+            });
+        }
+    };
+
+    return helpCommon;
+}));

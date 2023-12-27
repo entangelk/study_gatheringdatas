@@ -1,0 +1,65 @@
+(function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define([
+            'jquery'
+        ], factory);
+    } else {
+        root.productPrice = factory(
+            root.jQuery
+        );
+    }
+}(window || this, function ($) {
+    'use strict';
+    var resizeThread;
+    var descriptionProperty = "frameHeightOfDesc";
+    var descriptionGroupProperty = "frameHeightOfStdDesc";
+
+    var description = {
+        init: function () {
+            this.initThread();
+            var targetProperty = this.getTargetProperty();
+
+            resizeThread = setInterval(function () {
+                return description.sendPostMessage(targetProperty);
+            }, 1000);
+        },
+        initThread: function () {
+            if (!resizeThread && resizeThread != null) {
+                clearInterval(resizeThread);
+            }
+        },
+        isOpenedLayerPopup: function () {
+            try {
+                var groupLayerPopup = parent.document.getElementById('ar-dialogOption2');
+
+                return groupLayerPopup && groupLayerPopup.style.display === 'block';
+            } catch (e) {
+                return false;
+            }
+        },
+        getTargetProperty: function () {
+            return this.isOpenedLayerPopup()
+                ? descriptionGroupProperty
+                : descriptionProperty;
+        },
+        sendPostMessage: function (targetProperty) {
+            if (!this.isOpenedLayerPopup()
+                && targetProperty === descriptionGroupProperty) {
+                return;
+            }
+
+            var heightDescription = document.body.scrollHeight;
+            var params = {};
+            params[targetProperty] = heightDescription;
+
+            var isIE9 = (navigator.userAgent.toLowerCase().indexOf("msie 9") !== -1);
+
+            if (isIE9) {
+                window.parent.postMessage(JSON.stringify(params), "*");
+            } else {
+                window.parent.postMessage(params, "*");
+            }
+        }
+    };
+    return description;
+}));

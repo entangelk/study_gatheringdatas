@@ -1,0 +1,100 @@
+(function(root, factory) {
+    'use strict';
+    if (typeof define === 'function' && define.amd) {
+        define([
+            'jquery'
+        ], factory);
+    } else {
+        root.productVideo = factory(
+            root.jQuery
+        );
+    }
+}(window || this, function($) {
+    'use strict';
+    var prdVar = productPrdInfo;
+
+    var videoBox = $('.video11box'),
+        videoplayer = videoBox.find('video'),
+        video = videoplayer[0];
+
+    video.muted = true; //for IE9...
+
+    var logBody = {};
+    logBody.current_product_no = prdVar.prdNo;
+
+    var movie_object = {};
+    movie_object.product_no = prdVar.prdNo;
+    movie_object.movie_no = prdVar.movieNo;
+    movie_object.movie_auto_play_yn = 'Y';
+
+    var productVideo = {
+
+        init : function() {
+            this.setHandler();
+        },
+
+        setHandler: function() {
+            $('#videoPlayBtn').click(function () {
+                if (!document.createElement('video').canPlayType) {
+                    console.log('video 미지원');
+                    return false;
+                }
+                videoplayer.attr('controls', 'controls');
+                video.play();
+
+                $(this).hide();
+            });
+
+            $(video).on("playing", function() {
+                movie_object.movie_laptime = parseInt(this.currentTime);
+                logBody.movie_object = movie_object;
+
+                $('#videoPlayBtn').attr('data-log-actionid-label', 'movie_click_start');
+                $('#videoPlayBtn').attr('data-log-body', JSON.stringify(logBody));
+                rakeLog.sendRakeLog(document.getElementById('videoPlayBtn'), 'click');
+            });
+
+            $(video).on("pause", function () {
+                movie_object.movie_laptime = parseInt(this.currentTime);
+                logBody.movie_object = movie_object;
+
+                $('#videoPlayBtn').attr('data-log-actionid-label', 'movie_click_pause');
+                $('#videoPlayBtn').attr('data-log-body', JSON.stringify(logBody));
+                rakeLog.sendRakeLog(document.getElementById('videoPlayBtn'), 'click');
+            });
+
+            $(video).on("volumechange", function () {
+                movie_object.movie_laptime = parseInt(this.currentTime);
+                logBody.movie_object = movie_object;
+                logBody.check_value = this.muted ? "N" : "Y";
+
+                $('#videoPlayBtn').attr('data-log-actionid-label', 'movie_click_mute');
+                $('#videoPlayBtn').attr('data-log-body', JSON.stringify(logBody));
+                rakeLog.sendRakeLog(document.getElementById('videoPlayBtn'), 'click');
+            });
+
+            $(video).on("ended", function () {
+                movie_object.movie_laptime = parseInt(this.currentTime);
+                logBody.movie_object = movie_object;
+
+                $('#videoPlayBtn').attr('data-log-actionid-label', 'movie_play_end');
+                $('#videoPlayBtn').attr('data-log-body', JSON.stringify(logBody));
+                rakeLog.sendRakeLog(document.getElementById('videoPlayBtn'), 'click');
+            });
+
+            $(video).on("fullscreenchange mozfullscreenchange webkitfullscreenchange msfullscreenchange", function () {
+                var state = document.fullScreen || document.mozFullScreen || document.webkitIsFullScreen || document.msFullScreen;
+
+                movie_object.movie_laptime = parseInt(this.currentTime);
+                logBody.movie_object = movie_object;
+                logBody.check_value = state ? "on" : "off";
+
+                $('#videoPlayBtn').attr('data-log-actionid-label', 'movie_click_fullscreen');
+                $('#videoPlayBtn').attr('data-log-body', JSON.stringify(logBody));
+                rakeLog.sendRakeLog(document.getElementById('videoPlayBtn'), 'click');
+            });
+        }
+    };
+
+    return productVideo;
+}));
