@@ -115,10 +115,10 @@ def page_move():
                 element_click.click()
                 break
     except: # 경매 매물이 없을경우
-        element_click = browser.find_element(by=By.CSS_SELECTOR,value='#contents > div.table_contents > div.tbl_btn > a:nth-child(5)')
+        element_click = browser.find_element(by=By.CSS_SELECTOR,value='#contents > div.table_contents > form > div > div > a')
         element_click.click()
     return
-
+#contents > div.table_contents > form > div > div > a
 
 def page_data_get():
     # 법원 이름 호출
