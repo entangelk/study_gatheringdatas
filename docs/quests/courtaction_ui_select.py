@@ -15,7 +15,7 @@ def into_screen():
     element_click.click()
     return
 
-def selec_jiwon():
+def selec_jiwon_index():
     numcount_bundle = browser.find_elements(by=By.CSS_SELECTOR,value='#idJiwonNm>option') # 지원 엘리멘츠 호출
     count=0
     for i in numcount_bundle:   # 엘리멘츠 갯수 카운팅
@@ -27,6 +27,28 @@ def selec_jiwon():
         Select(element_country).select_by_index(i)
         # 검색 버튼 클릭
         element_click = browser.find_element(by=By.CSS_SELECTOR,value='#contents > form > div.tbl_btn > a:nth-child(1)')
+        element_click.click()
+        time.sleep(3)
+        # 페이지 이동 함수 호출
+        page_move()
+        pass
+    return
+
+def selec_jiwon_value():
+    # 옵션값 전부 호출
+    dropdown_bundle = browser.find_elements(by=By.CSS_SELECTOR,value='#idJiwonNm>option')
+    # value로 select작성
+    dropdown = browser.find_element(by=By.ID, value='idJiwonNm')
+    select = Select(dropdown)
+    for i in range(len(dropdown_bundle) - 1):  # 마지막 '전체' 옵션을 제외하고 반복
+        dropdown_bundle = browser.find_elements(by=By.CSS_SELECTOR,value='#idJiwonNm>option')
+        select = Select(dropdown)
+        time.sleep(3)
+        option_value = dropdown_bundle[i].get_attribute('value')
+        select.select_by_value(option_value)
+        
+        # 검색 버튼 클릭
+        element_click = browser.find_element(by=By.CSS_SELECTOR, value='#contents > form > div.tbl_btn > a:nth-child(1)')
         element_click.click()
         time.sleep(3)
         # 페이지 이동 함수 호출
@@ -125,5 +147,6 @@ def page_move():
     return
 
 into_screen()
-selec_jiwon()
+# selec_jiwon_index() # index로 진입
+selec_jiwon_value()  # value로 진입
 browser.quit()
