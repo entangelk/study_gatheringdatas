@@ -7,11 +7,14 @@ import time
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+from selenium.common.exceptions import NoSuchElementException
+
 from pymongo import MongoClient
 
 mongoclient = MongoClient('mongodb://localhost:27017') #mongo접속
 db_local = mongoclient['gatheringdatas']   #database 연결
 insert_collection = db_local['11st_item_comments_back']
+insert_sec_collection = db_local['11st_comment']
 
 
 webdriver_manager_directory = ChromeDriverManager().install()
@@ -105,6 +108,89 @@ for itme in element_itmes:
             'Detail' : detail
         }
         insert_collection.insert_one(data)  # 데이터 베이스 업로드
+
+    try:
+        browser.switch_to.frame('ifrmReview')
+    except:
+        pass
+       # comment 창 진입
+    time.sleep(3)
+    while True: # 더보기 끝까지 호출하기
+        try : 
+            element_click = browser.find_element(by=By.CSS_SELECTOR,value='#review-list-page-area > div > button')
+            element_click.click()
+            time.sleep(3)
+            pass
+        except:
+            break
+        
+    page_area = browser.find_elements(by=By.CSS_SELECTOR,value='#review-list-page-area>ul')    # 카운팅 할 모든 엘리맨트 호출
+    count=0 # 카운터 초기화
+    for i in page_area: # 엘리멘트 갯수만큼
+        count += 1  # 카운트 증가
+        pass
+    pass
+
+
+
+    pass
+    for i in range(count):  # 총 엘리멘트 수 만큼 반복
+        try:
+            element_bundles = browser.find_elements(by=By.CSS_SELECTOR,value='#review-list-page-area > ul:nth-child({})'.format(i+1))   # 1차 코멘트 페이지
+            for k in element_bundles:
+                element_bundle = k.find_elements(by=By.CSS_SELECTOR,value='li') # 2차 개인 섹션
+                for j in element_bundle:
+                    sec_count=0 # useless data 거름망을 위한 카운터 초기화
+                    try:
+                        element_name = j.find_element(by=By.CSS_SELECTOR, value='dl > dt')  # 이름 추출
+                        name = element_name.text
+                    except:
+                        name = ""
+                        sec_count+=1    # useless data 카운팅
+                    try:
+                        try:
+                            element_select = j.find_element(by=By.CSS_SELECTOR, value='div > p.option > dd')    # 옵션 추출 1차 트라이
+                            select = element_select.text
+                            pass
+                        except:
+                            try:
+                                element_select = j.find_element(by=By.CSS_SELECTOR, value='div > p.option') # 옵션 추출 2차 트라이
+                                select = element_select.text
+                            except:
+                                element_select = j.find_element(by=By.CSS_SELECTOR, value='div > dl > div > dd') # 옵션 추출 3차 트라이
+                                select = element_select.text
+                    except:
+                        select = ""
+                        sec_count+=1 # useless data 카운팅
+                    try:
+                        element_star = j.find_element(by=By.CSS_SELECTOR, value='div > p.grade > span > em')    # 평점 추출
+                        star = element_star.text
+                    except:
+                        star = ""
+                        sec_count+=1 # useless data 카운팅
+                    try:
+                        element_comment = j.find_element(by=By.CSS_SELECTOR, value='div > div > div.cont_text_wrap > p') # 코멘트 추출
+                        comment = element_comment.text
+                    except:
+                        comment = ""
+                        sec_count+=1 # useless data 카운팅
+                    data ={
+                        'Name' : name,
+                        'Select' : select,
+                        'Star' : star,
+                        'Comment' : comment
+                    }
+                    if sec_count > 2: # useless data 라면 DB 인서트 하지 않기
+                        pass
+                    else:
+                        insert_sec_collection.insert_one(data)
+                    pass
+                pass
+        except:
+            break
+
+
+
     browser.close() # 새로 열린창 닫기
     browser.switch_to.window(main_window_handle)    # 다시 처음 창으로 전환
 
