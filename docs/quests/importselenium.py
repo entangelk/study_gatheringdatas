@@ -3,7 +3,7 @@ def selenium_running(get_address):
     from selenium import webdriver
     from selenium.webdriver.chrome.service import Service as ChromeService
     from webdriver_manager.chrome import ChromeDriverManager
-    import time
+    
 
     webdriver_manager_directory = ChromeDriverManager().install()
     browser = webdriver.Chrome(service=ChromeService(webdriver_manager_directory))
@@ -19,3 +19,5 @@ def selenium_running(get_address):
     pass
     # - html 파일 받음(and 확인)
     html = browser.page_source
+
+    return browser
