@@ -57,40 +57,6 @@ def selec_jiwon_value():
         pass
     return
 
-def page_data_get():
-    # 법원 이름 호출
-    element_title = browser.find_element(by=By.CSS_SELECTOR, value='#search_title > ul > li:nth-child(1)')
-    title = element_title.text
-    # 내용 전체 호출
-    element_casenum = browser.find_elements(by=By.CSS_SELECTOR, value='#contents > div.table_contents > form:nth-child(1) > table > tbody>tr')
-    sec_count=0 # 다중 내용 저장 연결을 위한 카운팅 초키화
-    for i in element_casenum:
-        sec_count+=1   
-        try:
-            element_case = i.find_element(by=By.CSS_SELECTOR, value='td:nth-child(2)')
-            case_num = element_case.text
-            pass
-        except:
-            case_num=''
-            pass
-        element_contents = browser.find_elements(by=By.CSS_SELECTOR, value='tr:nth-child({})>td:nth-child(4)>div'.format(sec_count)) # 해당 칸의 내용 전부 호출
-        for j in element_contents:
-            try:
-                content = j.text
-                pass
-            except:
-                content =''
-                pass
-            data={
-                'Court' : title,
-                'Case_number' : case_num,
-                'Content' : content
-            }
-            insert_collection.insert_one(data)  # 저장
-            pass
-        pass
-    return
-
 def page_move():
     # 리스트 번호의 맨 마지막 버튼의 위치 카운트
     element_lastcount = browser.find_elements(by=By.CSS_SELECTOR,value='#contents > div.table_contents > form:nth-child(2) > div > div.page2>a')
@@ -152,6 +118,42 @@ def page_move():
         element_click = browser.find_element(by=By.CSS_SELECTOR,value='#contents > div.table_contents > div.tbl_btn > a:nth-child(5)')
         element_click.click()
     return
+
+
+def page_data_get():
+    # 법원 이름 호출
+    element_title = browser.find_element(by=By.CSS_SELECTOR, value='#search_title > ul > li:nth-child(1)')
+    title = element_title.text
+    # 내용 전체 호출
+    element_casenum = browser.find_elements(by=By.CSS_SELECTOR, value='#contents > div.table_contents > form:nth-child(1) > table > tbody>tr')
+    sec_count=0 # 다중 내용 저장 연결을 위한 카운팅 초키화
+    for i in element_casenum:
+        sec_count+=1   
+        try:
+            element_case = i.find_element(by=By.CSS_SELECTOR, value='td:nth-child(2)')
+            case_num = element_case.text
+            pass
+        except:
+            case_num=''
+            pass
+        element_contents = browser.find_elements(by=By.CSS_SELECTOR, value='tr:nth-child({})>td:nth-child(4)>div'.format(sec_count)) # 해당 칸의 내용 전부 호출
+        for j in element_contents:
+            try:
+                content = j.text
+                pass
+            except:
+                content =''
+                pass
+            data={
+                'Court' : title,
+                'Case_number' : case_num,
+                'Content' : content
+            }
+            insert_collection.insert_one(data)  # 저장
+            pass
+        pass
+    return
+
 
 into_screen()
 # selec_jiwon_index() # index로 진입
