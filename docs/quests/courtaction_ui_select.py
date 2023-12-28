@@ -42,6 +42,7 @@ def selec_jiwon_value():
     select = Select(dropdown)
     for i in range(len(dropdown_bundle) - 1):  # 마지막 '전체' 옵션을 제외하고 반복
         dropdown_bundle = browser.find_elements(by=By.CSS_SELECTOR,value='#idJiwonNm>option')
+        dropdown = browser.find_element(by=By.ID, value='idJiwonNm')
         select = Select(dropdown)
         time.sleep(3)
         option_value = dropdown_bundle[i].get_attribute('value')
@@ -97,54 +98,60 @@ def page_move():
     for i in element_lastcount:
         lastcount += 1
 
-    # 맨 마지막 페이지로 이동
-    element_click = browser.find_element(by=By.CSS_SELECTOR,value='#contents > div.table_contents > form:nth-child(2) > div > div.page2 > a:nth-child({})'.format(lastcount))
-    element_click.click()
+    try:
+        # 맨 마지막 페이지로 이동
+        element_click = browser.find_element(by=By.CSS_SELECTOR,value='#contents > div.table_contents > form:nth-child(2) > div > div.page2 > a:nth-child({})'.format(lastcount))
+        element_click.click()
+        pass
+   
 
-    # 맨 마지막 장의 페이지 숫자 저장 후 첫페이지로 이동
-    element_finalnum = browser.find_element(by=By.CSS_SELECTOR, value='#contents > div.table_contents > form:nth-child(2) > div > div.page2 > span')
-    count = int(element_finalnum.text)
-    element_click = browser.find_element(by=By.CSS_SELECTOR,value='#contents > div.table_contents > form:nth-child(2) > div > div.page2 > a:nth-child(1)')
-    element_click.click()    
+        # 맨 마지막 장의 페이지 숫자 저장 후 첫페이지로 이동
+        element_finalnum = browser.find_element(by=By.CSS_SELECTOR, value='#contents > div.table_contents > form:nth-child(2) > div > div.page2 > span')
+        count = int(element_finalnum.text)
+        element_click = browser.find_element(by=By.CSS_SELECTOR,value='#contents > div.table_contents > form:nth-child(2) > div > div.page2 > a:nth-child(1)')
+        element_click.click()    
 
 
-    for i in range((count//10)+1):  # 10페이지씩 이동할 수 있는 상태 +1 동안 반복 (마지막 반복에 오류로 브레이크)
-        try:
-            local_count = 0
-            for j in range(2,12):
+        for i in range((count//10)+1):  # 10페이지씩 이동할 수 있는 상태 +1 동안 반복 (마지막 반복에 오류로 브레이크)
+            try:
+                local_count = 0
+                for j in range(2,12):
 
-                page_data_get() # 페이지 정보 저장 함수 호출
+                    page_data_get() # 페이지 정보 저장 함수 호출
 
-                if local_count==0: # 맨 첫번째 페이지 에서 클릭
-                    element_click = browser.find_element(by=By.CSS_SELECTOR,value='#contents > div.table_contents > form:nth-child(2) > div > div.page2 > a:nth-child({})'.format(j))
-                    element_click.click()
-                    local_count=1   # 첫번재 클릭 이후 두번째 클릭 고려로 이동 조건
-                    time.sleep(2)
-                    pass
+                    if local_count==0: # 맨 첫번째 페이지 에서 클릭
+                        element_click = browser.find_element(by=By.CSS_SELECTOR,value='#contents > div.table_contents > form:nth-child(2) > div > div.page2 > a:nth-child({})'.format(j))
+                        element_click.click()
+                        local_count=1   # 첫번재 클릭 이후 두번째 클릭 고려로 이동 조건
+                        time.sleep(2)
+                        pass
 
-                elif local_count==1:    # 두번째 부터 버튼 갯수 고려해서 클릭
-                    element_click = browser.find_element(by=By.CSS_SELECTOR,value='#contents > div.table_contents > form:nth-child(2) > div > div.page2 > a:nth-child({})'.format(j+1))
-                    element_click.click()
-                    time.sleep(2)
-                    pass
+                    elif local_count==1:    # 두번째 부터 버튼 갯수 고려해서 클릭
+                        element_click = browser.find_element(by=By.CSS_SELECTOR,value='#contents > div.table_contents > form:nth-child(2) > div > div.page2 > a:nth-child({})'.format(j+1))
+                        element_click.click()
+                        time.sleep(2)
+                        pass
 
-                elif local_count == 2:  # 리스트의 숫자가 10개가 넘어갔을 경우 클릭
-                    element_click = browser.find_element(by=By.CSS_SELECTOR,value='#contents > div.table_contents > form:nth-child(2) > div > div.page2 > a:nth-child({})'.format(j+2))
-                    element_click.click()
-                    time.sleep(2)
-                    pass
+                    elif local_count == 2:  # 리스트의 숫자가 10개가 넘어갔을 경우 클릭
+                        element_click = browser.find_element(by=By.CSS_SELECTOR,value='#contents > div.table_contents > form:nth-child(2) > div > div.page2 > a:nth-child({})'.format(j+2))
+                        element_click.click()
+                        time.sleep(2)
+                        pass
 
-            local_count = 2 # 리스트의 숫자가 10개가 넘어갔을 때 조건
+                local_count = 2 # 리스트의 숫자가 10개가 넘어갔을 때 조건
 
-            # 다음 리스트 페이지로 이동
-            element_click = browser.find_element(by=By.CSS_SELECTOR,value='#contents > div.table_contents > form:nth-child(2) > div > div.page2 > a:nth-child(12)')
-            element_click.click()
+                # 다음 리스트 페이지로 이동
+                element_click = browser.find_element(by=By.CSS_SELECTOR,value='#contents > div.table_contents > form:nth-child(2) > div > div.page2 > a:nth-child(12)')
+                element_click.click()
 
-        except: # 다음 페이지가 없을 시 이전 버튼 클릭
-            element_click = browser.find_element(by=By.CSS_SELECTOR,value='#contents > div.table_contents > div.tbl_btn > a:nth-child(5)')
-            element_click.click()
-            break
-    return
+            except: # 다음 페이지가 없을 시 이전 버튼 클릭
+                element_click = browser.find_element(by=By.CSS_SELECTOR,value='#contents > div.table_contents > div.tbl_btn > a:nth-child(5)')
+                element_click.click()
+                break
+    except: # 경매 매물이 없을경우
+        element_click = browser.find_element(by=By.CSS_SELECTOR,value='#contents > div.table_contents > div.tbl_btn > a:nth-child(5)')
+        element_click.click()
+        return
 
 into_screen()
 # selec_jiwon_index() # index로 진입
