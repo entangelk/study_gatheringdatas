@@ -151,7 +151,7 @@ def page_move():
     except: # 경매 매물이 없을경우
         element_click = browser.find_element(by=By.CSS_SELECTOR,value='#contents > div.table_contents > div.tbl_btn > a:nth-child(5)')
         element_click.click()
-        return
+    return
 
 into_screen()
 # selec_jiwon_index() # index로 진입
