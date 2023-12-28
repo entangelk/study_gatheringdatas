@@ -118,7 +118,6 @@ def page_move():
         element_click = browser.find_element(by=By.CSS_SELECTOR,value='#contents > div.table_contents > form > div > div > a')
         element_click.click()
     return
-#contents > div.table_contents > form > div > div > a
 
 def page_data_get():
     # 법원 이름 호출
