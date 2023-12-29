@@ -40,10 +40,12 @@ def selec_jiwon_value():
     # value로 select작성
     dropdown = browser.find_element(by=By.ID, value='idJiwonNm')
     select = Select(dropdown)
+    pass
     for i in range(len(dropdown_bundle) - 1):  # 마지막 '전체' 옵션을 제외하고 반복
         dropdown_bundle = browser.find_elements(by=By.CSS_SELECTOR,value='#idJiwonNm>option')
         dropdown = browser.find_element(by=By.ID, value='idJiwonNm')
         select = Select(dropdown)
+        pass
         time.sleep(3)
         option_value = dropdown_bundle[i].get_attribute('value')
         select.select_by_value(option_value)
@@ -74,6 +76,7 @@ def page_move():
         # 맨 마지막 장의 페이지 숫자 저장 후 첫페이지로 이동
         element_finalnum = browser.find_element(by=By.CSS_SELECTOR, value='#contents > div.table_contents > form:nth-child(2) > div > div.page2 > span')
         count = int(element_finalnum.text)
+
         element_click = browser.find_element(by=By.CSS_SELECTOR,value='#contents > div.table_contents > form:nth-child(2) > div > div.page2 > a:nth-child(1)')
         element_click.click()    
 
