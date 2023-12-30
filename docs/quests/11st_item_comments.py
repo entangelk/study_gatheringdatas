@@ -107,8 +107,15 @@ for itme in element_itmes:
             'Dsc_price' : finalDscPrc,
             'Detail' : detail
         }
-        insert_collection.insert_one(data)  # 데이터 베이스 업로드
+        # insert_collection.insert_one(data)  # 데이터 베이스 업로드
+    browser.close() # 새로 열린창 닫기
+    browser.switch_to.window(main_window_handle)    # 다시 처음 창으로 전환
 
+    # 처음창이 충분히 열릴 때까지 기다림
+    wait = WebDriverWait(browser, 10)   # 10초마다 체크
+    wait.until(EC.presence_of_element_located((By.XPATH, '//body'))) 
+
+'''
     try:
         browser.switch_to.frame('ifrmReview')
     except:
@@ -189,14 +196,9 @@ for itme in element_itmes:
         except:
             break
 
+'''
 
-
-    browser.close() # 새로 열린창 닫기
-    browser.switch_to.window(main_window_handle)    # 다시 처음 창으로 전환
-
-    # 처음창이 충분히 열릴 때까지 기다림
-    wait = WebDriverWait(browser, 10)   # 10초마다 체크
-    wait.until(EC.presence_of_element_located((By.XPATH, '//body')))    # 새창에서 body가 로딩될때까지
+   # 새창에서 body가 로딩될때까지
 
 pass
 # browser.save_screenshot('./formats.png')
