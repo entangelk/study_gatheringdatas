@@ -3,15 +3,18 @@
 import requests  # postman app 역할
 
 # request API 요청
-url = 'https://openapi.naver.com/v1/search/shop'
+url = 'https://openapi.naver.com/v1/datalab/shopping/categories'
 
-params = {
-    'query':'인공지능'
-}
-
+params =  {
+    "startDate":"2017-08-01",
+    "endDate":"2017-09-30",
+    "timeUnit":"month",
+    "category":[{"name":"패션의류","param":["50000000"]},{"name":"화장품/미용","param":["50000002"]}],
+    }
 headers ={
-    'X-Naver-Client-Id' : 'NtLeqJGtcTpNKXOlmtzV',
-    'X-Naver-Client-Secret' : '3ndCmeLwzE'
+    'X-Naver-Client-Id' : 'UO2S9XsZaoMlGjRKN8Ut',
+    'X-Naver-Client-Secret' : 'a9tB6EspHA',
+    'Content-Type' : 'application/json'
 }
 
 response = requests.get(url, params=params, headers=headers)
@@ -22,6 +25,7 @@ raw_content = response.content
 import json
 contents = json.loads(raw_content)
 
+pass
 shop_info = [
     {
         'lastBuildDate' : contents['lastBuildDate'],
@@ -45,9 +49,9 @@ collection_item = database['serch_shop_list']
 # insert 작업 진행
 result_info = collection_info.insert_many(shop_info)
 
-elements_info = collection_info.find_one({},{'_id' : 1})
-id_relative = elements_info['_id']
-pass
+elements_info = collection_info.find({},{'_id' : 1})
+id_relative = elements_info[0]['_id']
+
 item_list = contents['items']
 
 for i in range(len(item_list)):
