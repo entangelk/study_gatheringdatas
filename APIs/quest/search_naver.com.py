@@ -45,13 +45,20 @@ collection_item = database['serch_shop_list']
 # insert 작업 진행
 result_info = collection_info.insert_many(shop_info)
 
-elements_info = collection_info.find_one({},{'_id' : 1})
-id_relative = elements_info['_id']
+# 이 구문은 이 사이에 뭔가 다중이용으로 인해 텀이 발생할 경우 오류를 일으킬 수 있음
+# elements_info = collection_info.find_one({},{'_id' : 1})
+# id_relative = elements_info['_id']
+
+# 넣음과 동시에 id를 추출하여 넣는것이 더 효과적임
+id_relative = result_info.inserted_ids
+
+
+
 pass
 item_list = contents['items']
 
 for i in range(len(item_list)):
-    item_list[i]['id_relative'] = id_relative
+    item_list[i]['id_relative'] = id_relative[0]
     pass
 
 result_item = collection_item.insert_many(item_list)

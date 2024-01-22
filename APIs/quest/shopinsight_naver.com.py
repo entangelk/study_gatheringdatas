@@ -5,7 +5,7 @@ import requests  # postman app 역할
 # request API 요청
 url = "https://openapi.naver.com/v1/datalab/shopping/categories"
 
-params =  {
+body =  {
     "startDate":"2017-08-01",
     "endDate":"2018-09-30",
     "timeUnit":"month",
@@ -22,7 +22,7 @@ headers ={
     'Content-Length' : '360'
 }
 
-response = requests.post(url, json=params, headers=headers)
+response = requests.post(url, json=body, headers=headers)
 
 raw_content = response.content
 
