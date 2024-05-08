@@ -26,6 +26,8 @@ from selenium.webdriver.common.keys import Keys
 
 element_body = browser.find_element(by=By.CSS_SELECTOR,value='body')
 
+
+# 스크롤 끝까지 내리기
 previous_scrollHeight = 0
 while True:
     element_body.send_keys(Keys.END)
@@ -35,7 +37,11 @@ while True:
     else:
         previous_scrollHeight = current_scrollHeight
     time.sleep(1)
+
+
+
 pass
 # browser.save_screenshot('./formats.png')
 # 브라우저 종료
 browser.quit()
+
